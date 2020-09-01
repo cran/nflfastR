@@ -1,0 +1,54 @@
+Type: Package
+Package: nflfastR
+Title: Functions to Efficiently Access NFL Play by Play Data
+Version: 2.2.1
+Authors@R: 
+    c(person(given = "Sebastian",
+             family = "Carl",
+             role = "aut",
+             email = "mrcaseb@gmail.com"),
+      person(given = "Ben",
+             family = "Baldwin",
+             role = c("cre", "aut"),
+             email = "bbaldwin206@gmail.com"),
+      person(given = "Lee", 
+             family = "Sharpe",
+             role = "ctb"),
+      person(given = "Maksim", 
+             family = "Horowitz",
+             role = "ctb",
+             email = "maksim.horowitz@gmail.com"), 
+      person(given = "Ron",
+             family = "Yurko",
+             role = "ctb",
+             email = "ryurko@stat.cmu.edu"),
+      person(given = "Samuel",
+             family = "Ventura",
+             role = "ctb",
+             email = "samventura22@gmail.com"))
+Description: A set of functions to access National Football League play-by-play 
+  data from <https://www.nfl.com/>.
+License: MIT + file LICENSE
+URL: https://mrcaseb.github.io/nflfastR/,
+        https://github.com/mrcaseb/nflfastR
+BugReports: https://github.com/mrcaseb/nflfastR/issues
+Depends: R (>= 3.5.0)
+Imports: dplyr, glue, httr, janitor, jsonlite, lubridate, magrittr,
+        mgcv, progressr (>= 0.6.0), purrr (>= 0.3.0), stats, rlang,
+        stringr (>= 1.3.0), tibble (>= 3.0), tidyr (>= 1.0.0),
+        tidyselect (>= 1.1.0), xgboost (>= 1.1)
+Suggests: DBI, furrr, future, rmarkdown, RSQLite
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+NeedsCompilation: no
+Packaged: 2020-08-26 15:29:30 UTC; ne48wop
+Author: Sebastian Carl [aut],
+  Ben Baldwin [cre, aut],
+  Lee Sharpe [ctb],
+  Maksim Horowitz [ctb],
+  Ron Yurko [ctb],
+  Samuel Ventura [ctb]
+Maintainer: Ben Baldwin <bbaldwin206@gmail.com>
+Repository: CRAN
+Date/Publication: 2020-09-01 09:00:02 UTC
