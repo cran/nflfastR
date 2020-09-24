@@ -6,15 +6,15 @@
 
 #' Get NFL Play by Play Data
 #'
-#' @param game_ids Vector of character ids (see details for further information)
-#' @param source Character - must now be \code{nfl} or unspecified (see details for further information)
+#' @param game_ids Vector of character ids (see details for further information).
+#' @param source Character - \code{nfl} for the NFL.com page or \code{old} for the old gamecenter. For \code{old}, old_game_id must be supplied
 #' @param pp Logical - either \code{TRUE} or \code{FALSE} (see details for further information)
 #' @param ... Additional arguments passed to the scraping functions (for internal use)
 #' @details To load valid game_ids please use the package function \code{\link{fast_scraper_schedules}}.
 #'
 #' The \code{source} parameter controls from which source the data is being
 #' scraped. The old parameters \code{rs} as well as \code{gc}
-#' are not valid anymore. Please use \code{nfl} or leave unspecified.
+#' are not valid anymore. Please use \code{nfl} or \code{old}.
 #' The \code{pp} parameter controls if the scraper should use parallel processing.
 #' Please note that the initiating process takes a few seconds which means it
 #' may be better to set \code{pp = FALSE} if you are scraping just a few games.
@@ -290,16 +290,16 @@
 #' \item{series_success}{1: scored touchdown, gained enough yards for first down.}
 #' \item{series_result}{Possible values: First down, Touchdown, Opp touchdown, Field goal, Missed field goal, Safety, Turnover, Punt, Turnover on downs, QB kneel, End of half}
 #' \item{start_time}{Kickoff time in eastern time zone.}
-#' \item{order_sequence}{Column provided by NFL to fix out-of-order plays. Available 2011 and beyond.}
-#' \item{time_of_day}{Time of day of play in UTC "HH:MM:SS" format. Available 2011 and beyond.}
+#' \item{order_sequence}{Column provided by NFL to fix out-of-order plays. Available 2011 and beyond with source "nfl".}
+#' \item{time_of_day}{Time of day of play in UTC "HH:MM:SS" format. Available 2011 and beyond with source "nfl".}
 #' \item{stadium}{Game site name.}
 #' \item{weather}{String describing the weather including temperature, humidity and wind (direction and speed). Doesn't change during the game!}
 #' \item{nfl_api_id}{UUID of the game in the new NFL API.}
 #' \item{play_clock}{Time on the playclock when the ball was snapped.}
 #' \item{play_deleted}{Binary indicator for deleted plays.}
 #' \item{play_type_nfl}{Play type as listed in the NFL source. Slightly different to the regular play_type variable.}
-#' \item{special_teams_play}{Binary indicator for whether play is special teams play from NFL source. Available 2011 and beyond.}
-#' \item{st_play_type}{Type of special teams play from NFL source. Available 2011 and beyond.}
+#' \item{special_teams_play}{Binary indicator for whether play is special teams play from NFL source. Available 2011 and beyond with source "nfl".}
+#' \item{st_play_type}{Type of special teams play from NFL source. Available 2011 and beyond with source "nfl".}
 #' \item{end_clock_time}{Game time at the end of a given play.}
 #' \item{end_yard_line}{String indicating the yardline at the end of the given play consisting of team half and yard line number.}
 #' \item{drive_real_start_time}{Local day time when the drive started (currently not used by the NFL and therefore mostly 'NA').}
@@ -347,8 +347,8 @@
 fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
 
   # Error handling to correct source type
-  if (source != "nfl") {
-    stop("You tried to specify a source that isn't the new NFL web page. Please remove source from your request or use source = 'nfl'. The 'source' option will soon be deprecated.")
+  if (!source %in% c("nfl", "old")) {
+    stop("You tried to specify a source that isn't the new NFL web page or the old source. Please remove source from your request, use source = 'nfl', or source = 'old'.")
   }
 
   # No parallel processing demanded -> use purrr
@@ -357,10 +357,12 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
       progressr::with_progress({
         p <- progressr::progressor(along = game_ids)
         pbp <- purrr::map_dfr(game_ids, function(x, ...){
-          if (substr(x, 1, 4) < 2011) {
+          if (substr(x, 1, 4) < 2011 & source == "nfl") {
             plays <- get_pbp_gc(x, ...)
-          } else {
+          } else if (source == "nfl") {
             plays <- get_pbp_nfl(x, ...)
+          } else {
+            plays <- get_pbp_cdns(x, ...)
           }
           p(sprintf("x=%s", as.character(x)))
           return(plays)
@@ -369,8 +371,8 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
 
       if(purrr::is_empty(pbp) == FALSE) {
         message("Download finished. Adding variables...")
-        pbp <- pbp  %>%
-          add_game_data() %>%
+        pbp <- pbp %>%
+          add_game_data(source) %>%
           add_nflscrapr_mutations() %>%
           add_ep() %>%
           add_air_yac_ep() %>%
@@ -398,10 +400,12 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
         p <- progressr::progressor(along = game_ids)
         future::plan("multiprocess")
         pbp <- furrr::future_map_dfr(game_ids, function(x, ...){
-          if (substr(x, 1, 4) < 2011) {
-            plays <- get_pbp_gc(x,  ...)
-          } else {
+          if (substr(x, 1, 4) < 2011 & source == "nfl") {
+            plays <- get_pbp_gc(x, ...)
+          } else if (source == "nfl") {
             plays <- get_pbp_nfl(x, ...)
+          } else {
+            plays <- get_pbp_cdns(x, ...)
           }
           p(sprintf("x=%s", as.character(x)))
           return(plays)
@@ -411,7 +415,7 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
       if(purrr::is_empty(pbp) == FALSE) {
         message("Download finished. Adding variables...")
         pbp <- pbp %>%
-          add_game_data() %>%
+          add_game_data(source) %>%
           add_nflscrapr_mutations() %>%
           add_ep() %>%
           add_air_yac_ep() %>%
@@ -476,85 +480,60 @@ fast_scraper_clips <- function(game_ids, pp = FALSE) {
   return(clips)
 }
 
-#' Get team rosters for multiple seasons and teams
+#' Get team rosters for multiple seasons
 #'
-#' Given team_ids and years, return a dataset with each
-#' player the NFL has listed as part of the roster.
+#' Given years return a dataset with each player listed as part of the roster.
 #'
-#' @param team_ids A string vector containing the IDs for NFL Team(s)
-#' (see details for more information)
-#' @param seasons A string vector of 4-digit years associated with given NFL seasons
+#' @param seasons A vector of 4-digit years associated with given NFL seasons
 #' @param pp Logical - either \code{TRUE} or \code{FALSE} (see details for further information)
-#' @details To find team associated Team IDs use the \code{\link{teams_colors_logos}}
-#' dataset stored in this package!
+#' @details The roster data is accessed via the free to use Sleeper API.
 #' The \code{pp} parameter controls if the scraper should use parallel processing.
 #' Please note that the initiating process takes a few seconds which means it
-#' may be better to set \code{pp = FALSE} if you are scraping just a few teams/seasons.
+#' may be better to set \code{pp = FALSE} if you are scraping just a few seasons.
 #' @return Data frame where each individual row represents a player in
-#' the roster of the given team and season listed by the NFL
-#' containing the following information:
-#' \itemize{
-#' \item{team.season}
-#' \item{teamPlayers.displayName}
-#' \item{teamPlayers.firstName}
-#' \item{teamPlayers.middleName}
-#' \item{teamPlayers.lastName}
-#' \item{teamPlayers.suffix}
-#' \item{teamPlayers.status}
-#' \item{teamPlayers.position}
-#' \item{teamPlayers.positionGroup}
-#' \item{teamPlayers.nflId}
-#' \item{teamPlayers.esbId}
-#' \item{teamPlayers.gsisId}
-#' \item{teamPlayers.birthDate}
-#' \item{teamPlayers.homeTown}
-#' \item{teamPlayers.collegeId}
-#' \item{teamPlayers.collegeName}
-#' \item{teamPlayers.jerseyNumber}
-#' \item{teamPlayers.height}
-#' \item{teamPlayers.weight}
-# \item{teamPlayers.yearsOfExperience}
-# \item{teamPlayers.teamAbbr}
-# \item{teamPlayers.teamSeq}
-# \item{teamPlayers.teamId}
-# \item{teamPlayers.teamFullName}
-#' \item{team.teamId}
-#' \item{team.abbr}
-#' \item{team.cityState}
-#' \item{team.fullName}
-#' \item{team.nick}
-# \item{team.teamType}
-#' \item{team.conferenceAbbr}
-#' \item{team.divisionAbbr}
-#' \item{teamPlayers.headshot_url}
-#' \item{teamPlayers.profile_url}
+#' the roster of the given team and season containing the following information:
+#' \describe{
+#' \item{season}{4 digit season year.}
+#' \item{team}{Team abbreviation.}
+#' \item{position}{Abbreviation of the player's position (e.g. "QB", "WR", "RB", "CB"...).}
+#' \item{depth_chart_position}{Starting with the 2020 season: the abbreviation of the players depth_chart_position.}
+#' \item{jersey_number}{The player's 2 digit jersey number.}
+#' \item{status}{String indicating the status of the player (e.g. "Active", "Inactive", "Injured Reserve"...) at the update time \code{update_dt} (see below)}
+#' \item{full_name}{Full name of the player.}
+#' \item{first_name}{First name of the player.}
+#' \item{last_name}{Last name of the player.}
+#' \item{birth_date}{Birth date of the player.}
+#' \item{height}{Height of the player.}
+#' \item{weight}{Weight of the player.}
+#' \item{college}{Name of the college the player has attended.}
+#' \item{high_school}{Name of the High School the player has attended (only non-NA for players who were listed in the 2020 season).}
+#' \item{gsis_id}{The player's NFL GSIS ID, which can be used to link the player to play-by-play data.}
+#' \item{espn_id}{The player's ESPN ID (only non-NA for players who were listed in the 2020 season).}
+#' \item{sportradar_id}{The player's Sportradar ID (only non-NA for players who were listed in the 2020 season).}
+#' \item{yahoo_id}{The player's Yahoo Sports ID (only non-NA for players who were listed in the 2020 season).}
+#' \item{rotowire_id}{The player's Rotowire ID (only non-NA for players who were listed in the 2020 season).}
+#' \item{update_dt}{Date and time when the current entry was last updated (starting with the 2020 season).}
+#' \item{headshot_url}{URL to a player image (starting in the 2020 season on ESPN servers).}
 #' }
 #' @examples
 #' \donttest{
-#' # Roster of Steelers in 2018, no parallel processing
-#' # rosters <- fast_scraper_roster("3900", 2018, pp = FALSE)
-#'
-#' # Roster of Steelers and Seahawks in 2016 & 2019 using parallel processing
-#' # rosters <- fast_scraper_roster(c("3900", "4600"), c("2016", "2019"), pp = TRUE)
+#' # Roster of the 2019 and 2020 seasons
+#' fast_scraper_roster(2019:2020)
 #' }
-# @export
-#' @noRd
-fast_scraper_roster <- function(team_ids, seasons, pp = FALSE) {
-  stop("The NFL removed the public available data feed. We are working on a new solution.\n Meanwhile please check https://github.com/guga31bb/nflfastR-data/tree/master/roster-data for data of the seasons 2000-2019")
+#' @export
+fast_scraper_roster <- function(seasons, pp = FALSE) {
 
   # No parallel processing demanded -> use purrr
   if (pp == FALSE) {
     suppressWarnings(
-      rosters <-
-        purrr::pmap_df(
-          # pmap needs a list of lists. It is generated as all combinations of
-          # team_ids and seasons by cross2 but needs to be transposed for pmap
-          purrr::transpose(purrr::cross2(unique(team_ids), unique(seasons))),
-          function(teamId, season) {
-            grab_roster(teamId, season)
-          }
-        ) %>%
-        add_roster_mutations()
+      progressr::with_progress({
+        p <- progressr::progressor(along = seasons)
+        ret <- purrr::map_dfr(seasons, function(x){
+          out <- get_scheds_and_rosters(x, "roster")
+          p(sprintf("x=%s", as.integer(x)))
+          return(out)
+        })
+      })
     )
   }
 
@@ -564,22 +543,22 @@ fast_scraper_roster <- function(team_ids, seasons, pp = FALSE) {
     stop("Package \"furrr\" needed for parallel processing. Please install/load it.")
   }
   else {
+    if (length(seasons)<=10){
+      message(glue::glue("You have passed only {length(seasons)} season(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using pp=FALSE for a small number of seasons."))
+    }
     suppressWarnings({
-      future::plan("multiprocess")
-      rosters <-
-        furrr::future_pmap_dfr(
-          # pmap needs a list of lists. It is generated as all combinations of
-          # team_ids and seasons by cross2 but needs to be transposed for pmap
-          purrr::transpose(purrr::cross2(unique(team_ids), unique(seasons))),
-          function(teamId, season) {
-            grab_roster(teamId, season)
-          },
-          .progress = TRUE
-        ) %>%
-        add_roster_mutations()
+      progressr::with_progress({
+        p <- progressr::progressor(along = seasons)
+        future::plan("multiprocess")
+        ret <- furrr::future_map_dfr(seasons, function(x){
+          out <- get_scheds_and_rosters(x, "roster")
+          p(sprintf("x=%s", as.integer(x)))
+          return(out)
+        })
+      })
     })
   }
-  return(rosters)
+  return(ret)
 }
 
 #' Get NFL Season Schedules
@@ -625,10 +604,10 @@ fast_scraper_schedules <- function(seasons, pp = FALSE) {
     suppressWarnings(
       progressr::with_progress({
         p <- progressr::progressor(along = seasons)
-        schedules <- purrr::map_dfr(seasons, function(x){
-          sched <- get_season_schedule(x)
+        ret <- purrr::map_dfr(seasons, function(x){
+          out <- get_scheds_and_rosters(x, "schedule")
           p(sprintf("x=%s", as.integer(x)))
-          return(sched)
+          return(out)
         })
       })
     )
@@ -647,13 +626,13 @@ fast_scraper_schedules <- function(seasons, pp = FALSE) {
       progressr::with_progress({
         p <- progressr::progressor(along = seasons)
         future::plan("multiprocess")
-        schedules <- furrr::future_map_dfr(seasons, function(x){
-          sched <- get_season_schedule(x)
+        ret <- furrr::future_map_dfr(seasons, function(x){
+          out <- get_scheds_and_rosters(x, "schedule")
           p(sprintf("x=%s", as.integer(x)))
-          return(sched)
+          return(out)
         })
       })
     })
   }
-  return(schedules)
+  return(ret)
 }

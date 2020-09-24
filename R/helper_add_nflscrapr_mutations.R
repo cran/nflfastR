@@ -510,6 +510,11 @@ add_nflscrapr_mutations <- function(pbp) {
       side_of_field = "yardline_side",
       qtr = "quarter"
     ) %>%
+    dplyr::filter(
+      !is.na(.data$desc),
+      .data$desc != "",
+      !is.na(.data$qtr)
+    ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(game_id = as.character(.data$game_id)) %>%
     make_model_mutations()
