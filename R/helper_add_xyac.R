@@ -5,7 +5,7 @@
 ################################################################################
 #' Add expected yards after completion (xyac) variables
 #'
-#' @param pbp is a Data frame of play-by-play data scraped using \code{\link{fast_scraper}}.
+#' @inheritParams clean_pbp
 #' @details Build columns that capture what we should expect after the catch.
 #' @return The input Data Frame of the parameter 'pbp' with the following columns
 #' added:
@@ -19,13 +19,15 @@
 #' @importFrom rlang .data
 #' @importFrom xgboost getinfo
 #' @export
-add_xyac <- function(pbp) {
+add_xyac <- function(pbp, ...) {
 
   if (nrow(pbp) == 0) {
-    message("Nothing to do. Return empty data frame.")
+    usethis::ui_info("Nothing to do. Return passed data frame.")
   } else {
     # testing only
     # pbp <- g
+
+    usethis::ui_todo("Computing xyac...")
 
     pbp <- pbp %>% dplyr::select(-tidyselect::any_of(drop.cols.xyac))
 
@@ -152,10 +154,10 @@ add_xyac <- function(pbp) {
           dplyr::left_join(xyac_vars, by = "index") %>%
           dplyr::select(-.data$index)
 
-        message("added xyac variables")
+        message_completed("added xyac variables", ...)
 
       } else {# means xyac_model isn't available
-        message("This function needs to download the model data from GitHub. Please check your Internet connection and try again!")
+        usethis::ui_oops("This function needs to download the model data from GitHub. Please check your Internet connection and try again!")
         pbp <- pbp %>% dplyr::select(-.data$index)
       }
     } else {# means no valid pass plays in the pbp
@@ -168,7 +170,7 @@ add_xyac <- function(pbp) {
           xyac_fd = NA_real_
         ) %>%
         dplyr::select(-.data$index)
-      message("No non-NA values for xyac calculation detected. xyac variables set to NA")
+      usethis::ui_info("No non-NA values for xyac calculation detected. xyac variables set to NA")
     }
 
     # on old versions of dplyr, a .groups column is created, which we don't want

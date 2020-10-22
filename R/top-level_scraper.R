@@ -10,11 +10,13 @@
 #' @param source Character - \code{nfl} for the NFL.com page or \code{old} for the old gamecenter. For \code{old}, old_game_id must be supplied
 #' @param pp Logical - either \code{TRUE} or \code{FALSE} (see details for further information)
 #' @param ... Additional arguments passed to the scraping functions (for internal use)
+#' @param in_builder If \code{TRUE}, the final message will be suppressed (for usage inside of \code{\link{build_nflfastR_pbp}}).
 #' @details To load valid game_ids please use the package function \code{\link{fast_scraper_schedules}}.
 #'
 #' The \code{source} parameter controls from which source the data is being
-#' scraped. The old parameters \code{rs} as well as \code{gc}
+#' loaded. The old parameters \code{rs} as well as \code{gc}
 #' are not valid anymore. Please use \code{nfl} or \code{old}.
+#'
 #' The \code{pp} parameter controls if the scraper should use parallel processing.
 #' Please note that the initiating process takes a few seconds which means it
 #' may be better to set \code{pp = FALSE} if you are scraping just a few games.
@@ -344,11 +346,11 @@
 #' # Get pbp data for two games
 #' fast_scraper(c("2019_01_GB_CHI", "2013_21_SEA_DEN"))
 #' }
-fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
+fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ..., in_builder = FALSE) {
 
   # Error handling to correct source type
   if (!source %in% c("nfl", "old")) {
-    stop("You tried to specify a source that isn't the new NFL web page or the old source. Please remove source from your request, use source = 'nfl', or source = 'old'.")
+    usethis::ui_stop("You tried to specify a source that isn't the new NFL web page or the old source.\nPlease remove source from your request, use {usethis::ui_code('source = \"nfl\"')}, or {usethis::ui_code('source = \"old\"')}.")
   }
 
   # No parallel processing demanded -> use purrr
@@ -370,7 +372,7 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
       })
 
       if(purrr::is_empty(pbp) == FALSE) {
-        message("Download finished. Adding variables...")
+        usethis::ui_done("Download finished. Adding variables...")
         pbp <- pbp %>%
           add_game_data(source) %>%
           add_nflscrapr_mutations() %>%
@@ -389,11 +391,11 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
   # User wants parallel processing: check if the required package is installed.
   # Stop and Error when missing
   else if (pp == TRUE & !requireNamespace("furrr", quietly = TRUE)) {
-    stop("Package \"furrr\" needed for parallel processing. Please install/load it.")
+    usethis::ui_stop("Package {usethis::ui_value('furrr')} needed for parallel processing. Please install it with {usethis::ui_code('install.packages(\"furrr\")')}.")
   }
   else {
     if (length(game_ids)<=4){
-      message(glue::glue("You have passed only {length(game_ids)} GameIDs to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using pp=FALSE for a small number of games."))
+      usethis::ui_info("You have passed only {length(game_ids)} GameID(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using {usethis::ui_code('pp = FALSE')} for a small number of games.\n")
     }
     suppressWarnings({
       progressr::with_progress({
@@ -413,7 +415,7 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
       })
 
       if(purrr::is_empty(pbp) == FALSE) {
-        message("Download finished. Adding variables...")
+        usethis::ui_done("Download finished. Adding variables...")
         pbp <- pbp %>%
           add_game_data(source) %>%
           add_nflscrapr_mutations() %>%
@@ -428,7 +430,7 @@ fast_scraper <- function(game_ids, source = "nfl", pp = FALSE, ...) {
       }
     })
   }
-  message("Procedure completed.")
+  if (!in_builder) {usethis::ui_done("{usethis::ui_field('Procedure completed.')}")}
   return(pbp)
 }
 
@@ -540,11 +542,11 @@ fast_scraper_roster <- function(seasons, pp = FALSE) {
   # User wants parallel processing: check if the required package is installed.
   # Stop and Error when missing
   else if (pp == TRUE & !requireNamespace("furrr", quietly = TRUE)) {
-    stop("Package \"furrr\" needed for parallel processing. Please install/load it.")
+    usethis::ui_stop("Package {usethis::ui_value('furrr')} needed for parallel processing. Please install it with {usethis::ui_code('install.packages(\"furrr\")')}.")
   }
   else {
     if (length(seasons)<=10){
-      message(glue::glue("You have passed only {length(seasons)} season(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using pp=FALSE for a small number of seasons."))
+      usethis::ui_info("You have passed only {length(seasons)} season(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using {usethis::ui_code('pp = FALSE')} for a small number of seasons.")
     }
     suppressWarnings({
       progressr::with_progress({
@@ -616,11 +618,11 @@ fast_scraper_schedules <- function(seasons, pp = FALSE) {
   # User wants parallel processing: check if the required package is installed.
   # Stop and Error when missing
   else if (pp == TRUE & !requireNamespace("furrr", quietly = TRUE)) {
-    stop("Package \"furrr\" needed for parallel processing. Please install/load it.")
+    usethis::ui_stop("Package {usethis::ui_value('furrr')} needed for parallel processing. Please install it with {usethis::ui_code('install.packages(\"furrr\")')}.")
   }
   else {
     if (length(seasons)<=10){
-      message(glue::glue("You have passed only {length(seasons)} season(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using pp=FALSE for a small number of seasons."))
+      usethis::ui_info("You have passed only {length(seasons)} season(s) to parallel processing.\nPlease note that the initiating process takes a few seconds\nand consider using {usethis::ui_code('pp = FALSE')} for a small number of seasons.")
     }
     suppressWarnings({
       progressr::with_progress({
