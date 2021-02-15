@@ -4,8 +4,6 @@
 # Code Style Guide: styler::tidyverse_style()
 ################################################################################
 
-#' @import dplyr
-#' @importFrom tidyselect any_of
 select_variables <- function(pbp) {
 
     suppressWarnings(
@@ -51,7 +49,7 @@ nflscrapr_cols <-
     "total_home_comp_yac_epa", "total_away_comp_yac_epa",
     "total_home_raw_air_epa", "total_away_raw_air_epa", "total_home_raw_yac_epa",
     "total_away_raw_yac_epa",
-    "wp", "def_wp", "home_wp", "away_wp", "wpa", "home_wp_post", "away_wp_post",
+    "wp", "def_wp", "home_wp", "away_wp", "wpa", "vegas_wpa", "vegas_home_wpa", "home_wp_post", "away_wp_post",
     "vegas_wp", "vegas_home_wp",
     "total_home_rush_wpa", "total_away_rush_wpa",
     "total_home_pass_wpa", "total_away_pass_wpa", "air_wpa", "yac_wpa", "comp_air_wpa", "comp_yac_wpa",
@@ -70,9 +68,9 @@ nflscrapr_cols <-
     "touchdown", "pass_touchdown", "rush_touchdown", "return_touchdown", "extra_point_attempt",
     "two_point_attempt", "field_goal_attempt", "kickoff_attempt", "punt_attempt", "fumble",
     "complete_pass", "assist_tackle", "lateral_reception", "lateral_rush", "lateral_return",
-    "lateral_recovery", "passer_player_id", "passer_player_name", "receiver_player_id",
-    "receiver_player_name", "rusher_player_id", "rusher_player_name", "lateral_receiver_player_id",
-    "lateral_receiver_player_name", "lateral_rusher_player_id", "lateral_rusher_player_name",
+    "lateral_recovery", "passer_player_id", "passer_player_name", "passing_yards", "receiver_player_id",
+    "receiver_player_name", "receiving_yards", "rusher_player_id", "rusher_player_name", "rushing_yards", "lateral_receiver_player_id",
+    "lateral_receiver_player_name", "lateral_receiving_yards", "lateral_rusher_player_id", "lateral_rusher_player_name", "lateral_rushing_yards",
     "lateral_sack_player_id", "lateral_sack_player_name", "interception_player_id",
     "interception_player_name", "lateral_interception_player_id", "lateral_interception_player_name",
     "punt_returner_player_id", "punt_returner_player_name", "lateral_punt_returner_player_id",
@@ -91,7 +89,16 @@ nflscrapr_cols <-
     "assist_tackle_1_team", "assist_tackle_2_player_id", "assist_tackle_2_player_name",
     "assist_tackle_2_team", "assist_tackle_3_player_id", "assist_tackle_3_player_name",
     "assist_tackle_3_team", "assist_tackle_4_player_id", "assist_tackle_4_player_name",
-    "assist_tackle_4_team", "pass_defense_1_player_id", "pass_defense_1_player_name",
+    "assist_tackle_4_team",
+    #new in nflfastR v4.0
+    "tackle_with_assist",
+    "tackle_with_assist_1_player_id",
+    "tackle_with_assist_1_player_name",
+    "tackle_with_assist_1_team",
+    "tackle_with_assist_2_player_id",
+    "tackle_with_assist_2_player_name",
+    "tackle_with_assist_2_team",
+    "pass_defense_1_player_id", "pass_defense_1_player_name",
     "pass_defense_2_player_id", "pass_defense_2_player_name", "fumbled_1_team",
     "fumbled_1_player_id", "fumbled_1_player_name", "fumbled_2_player_id",
     "fumbled_2_player_name", "fumbled_2_team", "fumble_recovery_1_team",

@@ -10,9 +10,6 @@
 ## series_success =
 ##  1: scored touchdown, gained enough yards for first down
 ##  0: everything else
-#' @import dplyr
-#' @importFrom tidyr replace_na
-#' @importFrom rlang .data
 add_series_data <- function(pbp) {
   out <-
     pbp %>%
@@ -44,8 +41,8 @@ add_series_data <- function(pbp) {
         .data$field_goal_result == "made" ~ "Field goal",
         .data$field_goal_result %in% c("blocked", "missed") ~ "Missed field goal",
         .data$safety == 1 ~ "Safety",
-        .data$interception == 1 | .data$fumble_lost == 1 ~ "Turnover",
         .data$play_type == "punt" | .data$punt_attempt == 1 ~ "Punt",
+        .data$interception == 1 | .data$fumble_lost == 1 ~ "Turnover",
         .data$down == 4 & .data$yards_gained < .data$ydstogo & .data$play_type != "no_play" ~ "Turnover on downs",
         .data$qb_kneel == 1 ~ "QB kneel",
         .data$desc %in% c("END GAME", "END QUARTER 2", "END QUARTER 4") ~ "End of half"

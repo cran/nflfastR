@@ -8,15 +8,12 @@
 #
 # @param gameId Specifies the game
 
-#' @importFrom glue glue
-#' @importFrom httr HEAD
-#' @importFrom purrr pluck map_dfr map_df map_chr
-#' @importFrom stringr str_extract str_sub str_detect str_split
-#' @import dplyr
-#' @importFrom tibble tibble
-#' @importFrom tidyr unnest_wider unnest
-#' @importFrom rlang .data
-get_pbp_gc <- function(gameId, dir = NULL) {
+get_pbp_gc <- function(gameId, dir = NULL, qs = FALSE) {
+
+  if (isTRUE(qs) && !is_installed("qs")) {
+    usethis::ui_stop("Package {usethis::ui_value('qs')} required for argument {usethis::ui_value('qs = TRUE')}. Please install it.")
+  }
+
   combined <- data.frame()
   tryCatch(
     expr = {
@@ -35,30 +32,37 @@ get_pbp_gc <- function(gameId, dir = NULL) {
       season <- as.integer(substr(gameId, 1, 4))
 
       if (is.null(dir)) {
-        # postseason games are in here too
-        url <- glue::glue("https://raw.githubusercontent.com/guga31bb/nflfastR-raw/master/raw/{season}/{gameId}.rds")
+        path <- "https://raw.githubusercontent.com/guga31bb/nflfastR-raw/master/raw"
 
-        request <- httr::HEAD(url = url)
+        if(isFALSE(qs)) fetched <- curl::curl_fetch_memory(glue::glue("{path}/{season}/{gameId}.rds"))
 
-        if (request$status_code == 404) {
+        if(isTRUE(qs)) fetched <- curl::curl_fetch_memory(glue::glue("{path}/{season}/{gameId}.qs"))
+
+        if (fetched$status_code == 404) {
           warning(warn <- 3)
-        } else if (request$status_code == 500) {
+        } else if (fetched$status_code == 500) {
           warning(warn <- 4)
         }
 
-        raw <- readRDS(url(url))
+        if(isFALSE(qs)) raw <- read_raw_rds(fetched$content)
+
+        if(isTRUE(qs)) raw <- qs::qdeserialize(fetched$content)
 
       } else {
         # build path to locally stored game files. This functionality is primarily
         # for the data repo maintainer
-        p <- glue::glue("{dir}/{season}/{gameId}.rds")
+        if(isFALSE(qs)) p <- glue::glue("{dir}/{season}/{gameId}.rds")
+        if(isTRUE(qs)) p <- glue::glue("{dir}/{season}/{gameId}.qs")
+
         if (file.exists(p) == FALSE) {
           warning(warn <- 5)
         }
-        raw <- readRDS(p)
+
+        if(isFALSE(qs)) raw <- readRDS(p)
+        if(isTRUE(qs)) raw <- qs::qread(p)
       }
 
-      game_json <- raw %>% purrr::pluck(1)
+      game_json <- raw[[1]]
 
       date_parse <- names(raw)[1] %>% stringr::str_extract(pattern = "[0-9]{8}")
       date_year <- stringr::str_sub(date_parse, 1, 4)
@@ -84,7 +88,7 @@ get_pbp_gc <- function(gameId, dir = NULL) {
 
       # list of plays
       # each play has "players" column which is a list of player stats from the play
-      plays <- suppressWarnings(purrr::map_dfr(seq_along(drives), function(x) {
+      plays <- suppressWarnings(furrr::future_map_dfr(seq_along(drives), function(x) {
           cbind(
             "drive" = x,
             data.frame(do.call(
@@ -102,7 +106,7 @@ get_pbp_gc <- function(gameId, dir = NULL) {
       plays$away_team <- game_json$away$abbr
 
       # get df with 1 line per statId
-      stats <- purrr::map_dfr(seq_along(plays$play_id), function(x) {
+      stats <- furrr::future_map_dfr(seq_along(plays$play_id), function(x) {
           dplyr::bind_rows(plays[x, ]$players[[1]], .id = "player_id") %>%
             dplyr::mutate(play_id = plays[x, ]$play_id)
         }
@@ -123,9 +127,9 @@ get_pbp_gc <- function(gameId, dir = NULL) {
         )
 
 
-      pbp_stats <- purrr::map(unique(stats$playId), function(x) {
-        sum_play_stats(x, stats = stats)
-      })
+      pbp_stats <- furrr::future_map(unique(stats$playId), function(x, s) {
+        sum_play_stats(x, s)
+      }, stats)
 
       pbp_stats <- dplyr::bind_rows(pbp_stats)
 
@@ -199,11 +203,11 @@ get_pbp_gc <- function(gameId, dir = NULL) {
           ),
 
           # have to do all this nonsense to make goal_to_go and yardline_side for compatibility with later functions
-          yardline_side = purrr::map_chr(
+          yardline_side = furrr::future_map_chr(
             stringr::str_split(.data$yardline, " "),
             function(x) x[1]
           ),
-          yardline_number = as.numeric(purrr::map_chr(
+          yardline_number = as.numeric(furrr::future_map_chr(
             stringr::str_split(.data$yardline, " "),
             function(x) x[2]
           )),
@@ -232,7 +236,20 @@ get_pbp_gc <- function(gameId, dir = NULL) {
           order_sequence = NA_real_,
           time_of_day = NA_character_,
           special_teams_play = NA_real_,
-          st_play_type = NA_character_
+          st_play_type = NA_character_,
+          # there seems to be no easy way to find the safety scoring team. Will hard code the plays
+          # as there are only 6 of them in the game center data
+          safety_team = dplyr::case_when(
+            .data$safety == 1 & .data$game_id == "1999_04_PHI_NYG" & .data$play_id == 827  ~ .data$posteam,
+            .data$safety == 1 & .data$game_id == "2000_03_ATL_CAR" & .data$play_id == 3423 ~ .data$posteam,
+            .data$safety == 1 & .data$game_id == "2000_16_OAK_SEA" & .data$play_id == 3590 ~ .data$posteam,
+            .data$safety == 1 & .data$game_id == "2001_14_DAL_SEA" & .data$play_id == 2552 ~ .data$posteam,
+            .data$safety == 1 & .data$game_id == "2003_03_NO_TEN"  & .data$play_id == 416  ~ .data$posteam,
+            .data$safety == 1 & .data$game_id == "2009_08_STL_DET" & .data$play_id == 987  ~ .data$posteam,
+            .data$safety == 1 & .data$posteam == .data$home_team ~ .data$away_team,
+            .data$safety == 1 & .data$posteam == .data$away_team ~ .data$home_team,
+            TRUE ~ NA_character_
+          )
         ) %>%
         dplyr::group_by(.data$drive) %>%
         dplyr::mutate(

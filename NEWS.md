@@ -1,3 +1,54 @@
+# nflfastR 4.0.0
+
+## Breaking changes
+
+### Changed Functions
+
+* Deprecated the arguments `source` and `pp` all across the package. Using them will cause a 
+warning. Parallel processing has to be activated by choosing an appropriate `future::plan()` before
+calling the relevant functions. For more information please see [the package documentation](https://www.nflfastr.com/reference/nflfastR-package.html).
+* The function `build_nflfastR_pbp()` will now run `decode_player_ids()` by default (can be deactivated with the argument `decode = FALSE`). 
+* The function `build_nflfastR_pbp()` will now run `add_xpass()` by default and add the new variables `xpass` and `pass_oe`.
+* The functions `fast_scraper()` and `build_nflfastR_pbp()` now allow the output of `fast_scraper_schedules()` directly as input so it's not necessary anymore to pull the `game_id` first.
+
+### New Functions and Variables
+
+* Added the new function `load_pbp()` that loads complete seasons into memory for fast access of the play-by-play data.
+* Added the new variables `rushing_yards`, `lateral_rushing_yards`, `passing_yards`, `receiving_yards`, `lateral_receiving_yards` to fix an old bug where `yards_gained` gets overwritten on plays with laterals (#115).
+* Added columns `vegas_wpa` and `vegas_home_wpa` which contain Win Probability Added from the spread-adjusted WP model
+* Added column `out_of_bounds`
+* Added columns `fantasy`, `fantasy_id`, `fantasy_player_name`, and `fantasy_player_id` that indicate the rusher or receiver on the play
+* Added columns `tackle_with_assist`, `tackle_with_assist_1_player_id`, `tackle_with_assist_1_player_name`, `tackle_with_assist_1_team`, `tackle_with_assist_2_player_id`, `tackle_with_assist_2_player_name`, `tackle_with_assist_2_team`
+
+### Models and Miscellaneous
+
+* Tuned spread-adjusted win probability model one final (?) time. Expected points is now no longer 
+required for `calculate_win_probability()`
+* Added field descriptions `vignette("field_descriptions")` with a searchable list of all nflfastR variables
+* Switched data source for 2001-2010 to what is used for 2011 and on
+* All models have been moved to the [fastrmodels](https://cran.r-project.org/package=fastrmodels) package
+* Added the data frames `?field_descriptions` and `?stat_ids` to the package
+
+## Minor improvements and fixes
+
+* Fix bug where `fixed_drive` and `series` weren't updating after muffed punt (#144)
+* Fix bug induced by fixing the above (#149)
+* Fix bug where some special teams plays were incorrectly being labeled as pass plays (#125)
+* Fix bug where points for safeties were given to the `defteam` instead of the `posteam` (#152)
+* Fix bug where a muffed punt TD was given to the wrong team in a 2011 Jaguars game (#154)
+* Win probability is now calculated prior to PAT attempts rather than using WP on the ensuing kickoff
+* Improved performance of internal functions that speed up the rebuilding process in `update_db()`
+(added `qs` and `curl` to dependencies)
+* Fixed a bug where `calculate_expected_points()` and `calculate_win_probability()` duplicated some existing variables instead of replacing them (#170)
+* Fixed a bug where `penalty_type` wasn't `"no_play"` although it should have been (#172)
+* Fixed a bug where `penalty_team` could be incorrect in games of the Jaguars in the seasons 2011 - 2015 (#174)
+* Fixed a bug related to the calculation of `epa` on plays before a failed pass interference challenge in a few 2019 games (#175)
+* Fixed a bug related to lots of fields with `NA` on offsetting penalties (#44)
+* Fixed a bug in `epa` when possession team changes at end of 1st or 3rd quarter (#182)
+* Fixed a bug where various functions have left open connections
+* `vegas_wp` is now `NA` on final line since there is no possession team
+
+
 # nflfastR 3.2.0
 
 ## Models

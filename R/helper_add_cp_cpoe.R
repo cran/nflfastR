@@ -5,10 +5,6 @@
 # Code Style Guide: styler::tidyverse_style()
 ################################################################################
 
-#' @importFrom stats predict
-#' @importFrom dplyr filter select rename bind_cols mutate if_else
-#' @importFrom rlang .data
-#' @importFrom tibble as_tibble
 add_cp <- function(pbp) {
 
   # testing only
@@ -17,7 +13,7 @@ add_cp <- function(pbp) {
   passes <- prepare_cp_data(pbp)
 
   if (!nrow(passes %>% dplyr::filter(.data$valid_pass == 1)) == 0) {
-    pred <- stats::predict(cp_model, as.matrix(passes %>% dplyr::select(-"complete_pass", -"valid_pass"))) %>%
+    pred <- stats::predict(fastrmodels::cp_model, as.matrix(passes %>% dplyr::select(-"complete_pass", -"valid_pass"))) %>%
       tibble::as_tibble() %>%
       dplyr::rename(cp = "value") %>%
       dplyr::bind_cols(passes) %>%
@@ -48,9 +44,6 @@ add_cp <- function(pbp) {
 
 
 ### helper function for getting the data ready
-#' @importFrom dplyr mutate if_else select
-#' @importFrom stringr str_extract
-#' @importFrom rlang .data
 prepare_cp_data <- function(pbp) {
 
   # valid pass play: at least -15 air yards, less than 70 air yards, has intended receiver, has pass location

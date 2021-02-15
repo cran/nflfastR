@@ -4,10 +4,6 @@
 # Code Style Guide: styler::tidyverse_style()
 ################################################################################
 
-#' @import dplyr
-#' @importFrom lubridate period_to_seconds ms
-#' @importFrom stringr str_detect str_extract str_trim str_remove_all
-#' @importFrom rlang .data
 add_nflscrapr_mutations <- function(pbp) {
 
   #testing only
@@ -34,52 +30,36 @@ add_nflscrapr_mutations <- function(pbp) {
     # the !is.na(drive), drive part is to make the initial GAME line show up first
     # https://stackoverflow.com/questions/43343590/how-to-sort-putting-nas-first-in-dplyr
     dplyr::arrange(.data$order_sequence, .data$quarter, !is.na(.data$quarter_seconds_remaining), -.data$quarter_seconds_remaining, !is.na(.data$drive), .data$drive, .data$index, .by_group = TRUE) %>%
-    dplyr::ungroup() %>%
     dplyr::mutate(
-      # Fill in the rows with missing posteam with the lag:
+
+      # Make the possession team for kickoffs be the return team, since that is
+      # more intuitive from the EPA / WPA point of view:
+      posteam = dplyr::case_when(
+        # kickoff_finder is defined below
+        (.data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$home_team ~ .data$away_team,
+        (.data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$away_team ~ .data$home_team,
+        TRUE ~ .data$posteam
+      ),
+
+      # Fill in the rows with missing posteam with the lead:
       posteam = dplyr::if_else(
         (.data$quarter_end == 1 | .data$posteam == ""),
-        dplyr::lag(.data$posteam),
+        dplyr::lead(.data$posteam),
         .data$posteam),
       posteam_id = dplyr::if_else(
         (.data$quarter_end == 1 | .data$posteam_id == ""),
-        dplyr::lag(.data$posteam_id),
+        dplyr::lead(.data$posteam_id),
         .data$posteam_id),
+
       # Denote whether the home or away team has possession:
       posteam_type = dplyr::if_else(.data$posteam == .data$home_team, "home", "away"),
+
       # Column denoting which team is on defense:
       defteam = dplyr::if_else(
-        .data$posteam_type == "home",
+        .data$posteam == .data$home_team,
         .data$away_team, .data$home_team
       ),
-      # Make the possession team for kickoffs be the return team, since that is
-      # more intuitive from the EPA / WPA point of view:
-      posteam = dplyr::if_else(
-        # kickoff_finder is defined below
-        .data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder),
-        dplyr::if_else(
-          .data$posteam_type == "home",
-          .data$away_team, .data$home_team
-        ),
-        .data$posteam
-      ),
-      defteam = dplyr::if_else(
-        .data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder),
-        dplyr::if_else(
-          .data$posteam_type == "home",
-          .data$home_team, .data$away_team
-        ),
-        .data$defteam
-      ),
-      # Now flip the posteam_type as well:
-      posteam_type = dplyr::if_else(
-        .data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder),
-        dplyr::if_else(
-          .data$posteam_type == "home",
-          "away", "home"
-        ),
-        .data$posteam_type
-      ),
+
       yardline = dplyr::if_else(.data$yardline == "50", "MID 50", .data$yardline),
       yardline = dplyr::if_else(
         nchar(.data$yardline) == 0 | is.null(.data$yardline) | .data$yardline == "NULL" | is.na(.data$yardline),
@@ -105,7 +85,7 @@ add_nflscrapr_mutations <- function(pbp) {
       ),
       # Add column for replay or challenge:
       replay_or_challenge = stringr::str_detect(
-        .data$play_description, "(Replay Official reviewed)|( challenge(d)? )") %>%
+        .data$play_description, "(Replay Official reviewed)|( challenge(d)? )|(Challenged)") %>%
         as.numeric(),
       # Result of replay or challenge:
       replay_or_challenge_result = dplyr::if_else(
@@ -245,6 +225,9 @@ add_nflscrapr_mutations <- function(pbp) {
       # Create a play type column: either pass, run, field_goal, extra_point,
       # kickoff, punt, qb_kneel, qb_spike, or no_play (which includes timeouts and
       # penalties):
+      # but first reset the penalty fix variable in case it's trash
+      penalty_fix = dplyr::if_else(.data$penalty == 1 & .data$play_type_nfl == "PENALTY", 0, .data$penalty_fix),
+
       play_type = dplyr::if_else(
         (.data$penalty == 0 |
           (.data$penalty == 1 & .data$penalty_fix == 1)) &
@@ -312,6 +295,9 @@ add_nflscrapr_mutations <- function(pbp) {
            (.data$penalty == 1 & .data$penalty_fix == 1)) & .data$qb_kneel == 1,
         "qb_kneel", .data$play_type
       ),
+      play_type = dplyr::if_else(
+        is.na(.data$penalty) & is.na(.data$play_type) & stringr::str_detect(.data$play_description, " offsetting"), "no_play", .data$play_type
+      ),
       # Indicator for QB dropbacks (exclude spikes and kneels):
       qb_dropback = dplyr::if_else(
         .data$play_type == "pass" |
@@ -343,6 +329,20 @@ add_nflscrapr_mutations <- function(pbp) {
       # temporary columns that will not be included):
       # Initialize both home and away to have 3 timeouts for each
       # half except overtime where they have 2:
+
+      # extract timeouts from failed challenges when it's not otherwise there
+      tmp_timeout = stringr::str_extract(.data$play_description, "(?<=by\\s)[:upper:]{2,3}(?=\\s)"),
+      timeout_team = dplyr::if_else(
+        .data$replay_or_challenge == 1 & .data$timeout == 1 & is.na(.data$timeout_team), .data$tmp_timeout, .data$timeout_team
+
+      ),
+      timeout_team = dplyr::if_else(
+        .data$season <= 2015 & (.data$home_team %in% c("JAC", "JAX") | .data$away_team %in% c("JAC", "JAX")) & .data$timeout_team == "JAX",
+        "JAC",
+        .data$timeout_team
+      ),
+
+
       home_timeouts_remaining = dplyr::if_else(
         .data$quarter %in% c(1, 2, 3, 4),
         3, 2
@@ -426,7 +426,11 @@ add_nflscrapr_mutations <- function(pbp) {
       ),
       home_points_scored = dplyr::if_else(
         .data$defteam == .data$home_team &
-          (.data$safety == 1 | .data$two_point_return == 1 | .data$defensive_two_point_conv == 1),
+          (.data$two_point_return == 1 | .data$defensive_two_point_conv == 1),
+        2, .data$home_points_scored
+      ),
+      home_points_scored = dplyr::if_else(
+        .data$safety_team == .data$home_team & .data$safety == 1,
         2, .data$home_points_scored
       ),
       away_points_scored = dplyr::if_else(
@@ -456,7 +460,11 @@ add_nflscrapr_mutations <- function(pbp) {
       ),
       away_points_scored = dplyr::if_else(
         .data$defteam == .data$away_team &
-          (.data$safety == 1 | .data$two_point_return == 1 | .data$defensive_two_point_conv == 1),
+          (.data$two_point_return == 1 | .data$defensive_two_point_conv == 1),
+        2, .data$away_points_scored
+      ),
+      away_points_scored = dplyr::if_else(
+        .data$safety_team == .data$away_team & .data$safety == 1,
         2, .data$away_points_scored
       ),
       home_points_scored = dplyr::if_else(
@@ -530,8 +538,6 @@ kickoff_finder <- "(Offside on Free Kick)|(Delay of Kickoff)|(Onside Kick format
 
 
 ##some steps to prepare the data for the EP/WP/CP/FG models
-#' @import dplyr
-#' @importFrom rlang .data
 make_model_mutations <- function(pbp) {
 
   pbp <- pbp %>%
