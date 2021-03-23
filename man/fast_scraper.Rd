@@ -16,10 +16,10 @@ fast_scraper(
 \item{game_ids}{Vector of character ids or a data frame including the variable
 \code{game_id} (see details for further information).}
 
-\item{source}{\ifelse{html}{\figure{lifecycle-deprecated.svg}{options: alt='Deprecated lifecycle'}}{\strong{Deprecated}} has no effect and will be
+\item{source}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} has no effect and will be
 removed in a future release.}
 
-\item{pp}{\ifelse{html}{\figure{lifecycle-deprecated.svg}{options: alt='Deprecated lifecycle'}}{\strong{Deprecated}} has no effect and will be
+\item{pp}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} has no effect and will be
 removed in a future release.}
 
 \item{...}{Additional arguments passed to the scraping functions (for internal use)}
@@ -82,6 +82,8 @@ detailed information (description partly extracted from nflscrapR):
 \item{timeout}{Binary indicator for whether or not a timeout was called by either team.}
 \item{timeout_team}{String abbreviation for which team called the timeout.}
 \item{td_team}{String abbreviation for which team scored the touchdown.}
+\item{td_player_name}{String name of the player who scored a touchdown.}
+\item{td_player_id}{Unique identifier of the player who scored a touchdown.}
 \item{posteam_timeouts_remaining}{Number of timeouts remaining for the possession team.}
 \item{defteam_timeouts_remaining}{Number of timeouts remaining for the team on defense.}
 \item{total_home_score}{Score for the home team at the start of the play.}
@@ -253,10 +255,10 @@ Please see the description of \code{lateral_rusher_player_name} for further info
 \item{tackle_for_loss_1_player_name}{String name for one of the potential players with the tackle for loss.}
 \item{tackle_for_loss_2_player_id}{Unique identifier for one of the potential players with the tackle for loss.}
 \item{tackle_for_loss_2_player_name}{String name for one of the potential players with the tackle for loss.}
-\item{qb_hit_1_player_id}{Unique identifier for one of the potential players that hit the QB.}
-\item{qb_hit_1_player_name}{String name for one of the potential players that hit the QB.}
-\item{qb_hit_2_player_id}{Unique identifier for one of the potential players that hit the QB.}
-\item{qb_hit_2_player_name}{String name for one of the potential players that hit the QB.}
+\item{qb_hit_1_player_id}{Unique identifier for one of the potential players that hit the QB. No sack as the QB was not the ball carrier. For sacks please see \code{sack_player} or \verb{half_sack_*_player}.}
+\item{qb_hit_1_player_name}{String name for one of the potential players that hit the QB. No sack as the QB was not the ball carrier. For sacks please see \code{sack_player} or \verb{half_sack_*_player}.}
+\item{qb_hit_2_player_id}{Unique identifier for one of the potential players that hit the QB. No sack as the QB was not the ball carrier. For sacks please see \code{sack_player} or \verb{half_sack_*_player}.}
+\item{qb_hit_2_player_name}{String name for one of the potential players that hit the QB. No sack as the QB was not the ball carrier. For sacks please see \code{sack_player} or \verb{half_sack_*_player}.}
 \item{forced_fumble_player_1_team}{Team of one of the players with a forced fumble.}
 \item{forced_fumble_player_1_player_id}{Unique identifier of one of the players with a forced fumble.}
 \item{forced_fumble_player_1_player_name}{String name of one of the players with a forced fumble.}
@@ -306,6 +308,12 @@ Please see the description of \code{lateral_rusher_player_name} for further info
 \item{fumble_recovery_2_yards}{Yards gained by one of the players with a fumble recovery.}
 \item{fumble_recovery_2_player_id}{Unique identifier of one of the players with a fumble recovery.}
 \item{fumble_recovery_2_player_name}{String name of one of the players with a fumble recovery.}
+\item{sack_player_id}{Unique identifier of the player who recorded a solo sack.}
+\item{sack_player_name}{String name of the player who recorded a solo sack.}
+\item{half_sack_1_player_id}{Unique identifier of the first player who recorded half a sack.}
+\item{half_sack_1_player_name}{String name of the first player who recorded half a sack.}
+\item{half_sack_2_player_id}{Unique identifier of the second player who recorded half a sack.}
+\item{half_sack_2_player_name}{String name of the second player who recorded half a sack.}
 \item{return_team}{String abbreviation of the return team.}
 \item{return_yards}{Yards gained by the return team.}
 \item{penalty_team}{String abbreviation of the team with the penalty.}
@@ -314,7 +322,7 @@ Please see the description of \code{lateral_rusher_player_name} for further info
 \item{penalty_yards}{Yards gained (or lost) by the posteam from the penalty.}
 \item{replay_or_challenge}{Binary indicator for whether or not a replay or challenge.}
 \item{replay_or_challenge_result}{String indicating the result of the replay or challenge.}
-\item{penalty_type}{String indicating the penalty type.}
+\item{penalty_type}{String indicating the penalty type of the first penalty in the given play. Will be \code{NA} if \code{desc} is missing the type.}
 \item{defensive_two_point_attempt}{Binary indicator whether or not the defense was able to have an attempt on a two point conversion, this results following a turnover.}
 \item{defensive_two_point_conv}{Binary indicator whether or not the defense successfully scored on the two point conversion.}
 \item{defensive_extra_point_attempt}{Binary indicator whether or not the defense was able to have an attempt on an extra point attempt, this results following a blocked attempt that the defense recovers the ball.}

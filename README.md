@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# **nflfastR** <img src="man/figures/logo.png" align="right" width="25%" />
+# **nflfastR** <img src="man/figures/logo.png" align="right" width="25%" min-width="120px"/>
 
 <!-- badges: start -->
 
@@ -9,34 +9,36 @@
 status](https://www.r-pkg.org/badges/version-last-release/nflfastR)](https://CRAN.R-project.org/package=nflfastR)
 [![CRAN
 downloads](http://cranlogs.r-pkg.org/badges/grand-total/nflfastR)](https://CRAN.R-project.org/package=nflfastR)
-[![Travis build
-status](https://travis-ci.com/mrcaseb/nflfastR.svg?branch=master)](https://travis-ci.com/mrcaseb/nflfastR)
 [![R build
 status](https://github.com/mrcaseb/nflfastR/workflows/R-CMD-check/badge.svg)](https://github.com/mrcaseb/nflfastR/actions)
-[![Discord
-Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.com/invite/5Er2FBnnQa)
-<!-- [![Twitter Follow](https://img.shields.io/twitter/follow/nflfastR.svg?style=social)](https://twitter.com/nflfastR) -->
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![Support
+Server](https://img.shields.io/discord/591914197219016707.svg?color=7289da&label=Support&logo=discord&style=flat-square)](https://discord.com/invite/5Er2FBnnQa)
+[![Twitter
+Follow](https://img.shields.io/twitter/follow/nflfastR.svg?style=social)](https://twitter.com/nflfastR)
+<!-- [![Travis build status](https://travis-ci.com/mrcaseb/nflfastR.svg?branch=master)](https://travis-ci.com/mrcaseb/nflfastR) -->
 <!-- ![GitHub release (latest by date)](https://img.shields.io/github/v/release/mrcaseb/nflfastR?label=development%20version) -->
 <!-- badges: end -->
 
 `nflfastR` is a set of functions to efficiently scrape NFL play-by-play
 data. `nflfastR` expands upon the features of nflscrapR:
 
--   The package contains NFL play-by-play data back to 1999
--   As suggested by the package name, it obtains games **much** faster
--   Includes completion probability (`cp`), completion percentage over
+  - The package contains NFL play-by-play data back to 1999
+  - As suggested by the package name, it obtains games **much** faster
+  - Includes completion probability (`cp`), completion percentage over
     expected (`cpoe`), and expected yards after the catch (`xyac_epa`
     and `xyac_mean_yardage`) in play-by-play going back to 2006
--   Includes drive information, including drive starting position and
+  - Includes drive information, including drive starting position and
     drive result
--   Includes series information, including series number and series
+  - Includes series information, including series number and series
     success
--   Hosts [a repository of play-by-play data going back to
-    1999](https://github.com/guga31bb/nflfastR-data) for very quick
+  - Hosts [a repository of play-by-play data going back
+    to 1999](https://github.com/guga31bb/nflfastR-data) for very quick
     access
--   Features models for Expected Points, Win Probability, Completion
+  - Features models for Expected Points, Win Probability, Completion
     Probability, and Yards After the Catch (see section below)
--   Includes a function `update_db()` that creates and updates a
+  - Includes a function `update_db()` that creates and updates a
     database
 
 We owe a debt of gratitude to the original
@@ -113,23 +115,25 @@ incorporating the pre-game spread.
 
 ## Special thanks
 
--   To Nick Shoemaker for [finding and making available JSON-formatted
-    NFL play-by-play back to
-    1999](https://github.com/CroppedClamp/nfl_pbps) (`nflfastR` uses
+  - To Nick Shoemaker for [finding and making available JSON-formatted
+    NFL play-by-play back
+    to 1999](https://github.com/CroppedClamp/nfl_pbps) (`nflfastR` uses
     this source for 1999 and 2000 and previously also used it for
     2001-2010)
--   To Lau Sze Yui for developing a scraping function to access
-    JSON-formatted NFL play-by-play beginning in 2001.
--   To Lee Sharpe for curating a resource for game information
--   To Timo Riske, Lau Sze Yui, Sean Clement, and Daniel Houston for
+  - To Lau Sze Yui for developing a scraping function to access
+    JSON-formatted NFL play-by-play beginning in 2001
+  - To Aaron Schatz and Football Outsiders for providing charting data
+    to correctly mark scrambles in the 2005 season
+  - To Lee Sharpe for curating a resource for game information
+  - To Timo Riske, Lau Sze Yui, Sean Clement, and Daniel Houston for
     many helpful discussions regarding the development of the new
     `nflfastR` models
--   To Zach Feldman and Josh Hermsmeyer for many helpful discussions
+  - To Zach Feldman and Josh Hermsmeyer for many helpful discussions
     about CPOE models as well as Peter Owen for many helpful suggestions
     for the CP model
--   To Florian Schmitt for the logo design
--   The many users who found and reported bugs in `nflfastR` 1.0
--   And of course, the original
+  - To Florian Schmitt for the logo design
+  - The many users who found and reported bugs in `nflfastR` 1.0
+  - And of course, the original
     [`nflscrapR`](https://github.com/maksimhorowitz/nflscrapR) team,
     Maksim Horowitz, Ronald Yurko, and Samuel Ventura, whose work
     represented a dramatic step forward for the state of public NFL

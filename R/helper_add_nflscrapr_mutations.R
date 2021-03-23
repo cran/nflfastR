@@ -32,77 +32,6 @@ add_nflscrapr_mutations <- function(pbp) {
     dplyr::arrange(.data$order_sequence, .data$quarter, !is.na(.data$quarter_seconds_remaining), -.data$quarter_seconds_remaining, !is.na(.data$drive), .data$drive, .data$index, .by_group = TRUE) %>%
     dplyr::mutate(
 
-      # Make the possession team for kickoffs be the return team, since that is
-      # more intuitive from the EPA / WPA point of view:
-      posteam = dplyr::case_when(
-        # kickoff_finder is defined below
-        (.data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$home_team ~ .data$away_team,
-        (.data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$away_team ~ .data$home_team,
-        TRUE ~ .data$posteam
-      ),
-
-      # Fill in the rows with missing posteam with the lead:
-      posteam = dplyr::if_else(
-        (.data$quarter_end == 1 | .data$posteam == ""),
-        dplyr::lead(.data$posteam),
-        .data$posteam),
-      posteam_id = dplyr::if_else(
-        (.data$quarter_end == 1 | .data$posteam_id == ""),
-        dplyr::lead(.data$posteam_id),
-        .data$posteam_id),
-
-      # Denote whether the home or away team has possession:
-      posteam_type = dplyr::if_else(.data$posteam == .data$home_team, "home", "away"),
-
-      # Column denoting which team is on defense:
-      defteam = dplyr::if_else(
-        .data$posteam == .data$home_team,
-        .data$away_team, .data$home_team
-      ),
-
-      yardline = dplyr::if_else(.data$yardline == "50", "MID 50", .data$yardline),
-      yardline = dplyr::if_else(
-        nchar(.data$yardline) == 0 | is.null(.data$yardline) | .data$yardline == "NULL" | is.na(.data$yardline),
-        dplyr::lead(.data$yardline), .data$yardline
-      ),
-      yardline_number = dplyr::if_else(
-        .data$yardline == "MID 50", 50, .data$yardline_number
-      ),
-      yardline_100 = dplyr::if_else(
-        .data$yardline_side == .data$posteam | .data$yardline == "MID 50",
-        100 - .data$yardline_number, .data$yardline_number
-      ),
-      # Create a column with the time in seconds remaining for each half:
-      half_seconds_remaining = dplyr::if_else(
-        .data$quarter %in% c(1, 3),
-        .data$quarter_seconds_remaining + 900,
-        .data$quarter_seconds_remaining),
-      # Create a column with the time in seconds remaining for the game:
-      game_seconds_remaining = dplyr::if_else(
-        .data$quarter %in% c(1, 2, 3, 4),
-        .data$quarter_seconds_remaining + (900 * (4 - as.numeric(.data$quarter))),
-        .data$quarter_seconds_remaining
-      ),
-      # Add column for replay or challenge:
-      replay_or_challenge = stringr::str_detect(
-        .data$play_description, "(Replay Official reviewed)|( challenge(d)? )|(Challenged)") %>%
-        as.numeric(),
-      # Result of replay or challenge:
-      replay_or_challenge_result = dplyr::if_else(
-        .data$replay_or_challenge == 1,
-        dplyr::if_else(
-          stringr::str_detect(
-            tolower(.data$play_description),
-            "( upheld)|( reversed)|( confirmed)"
-          ),
-          stringr::str_extract(
-            tolower(.data$play_description),
-            "( upheld)|( reversed)|( confirmed)"
-          ) %>%
-            stringr::str_trim(), "denied"
-        ),
-        NA_character_
-      ),
       # Using the various two point indicators, create a column denoting the result
       # outcome for two point conversions:
       two_point_conv_result = dplyr::if_else(
@@ -136,14 +65,27 @@ add_nflscrapr_mutations <- function(pbp) {
           .data$two_point_conv_result == "success",
         2, .data$yards_gained
       ),
+      # Fix yards_gained for plays with laterals
+      yards_gained = dplyr::case_when(
+        !is.na(.data$passing_yards) &
+          .data$yards_gained != .data$passing_yards &
+          .data$penalty == 0 ~ .data$passing_yards,
+        !is.na(.data$rushing_yards) &
+          !is.na(.data$lateral_rushing_yards) &
+          .data$yards_gained != .data$rushing_yards &
+          .data$penalty == 0 ~ .data$rushing_yards + .data$lateral_rushing_yards,
+        TRUE ~ yards_gained
+      ),
       # Extract the penalty type:
       penalty_type = dplyr::if_else(
         .data$penalty == 1,
         .data$play_description %>%
-          stringr::str_extract("PENALTY on (.){2,35},.+, [0-9]{1,2} yard(s),") %>%
-          stringr::str_extract(", (([:alpha:])+([:space:])?)+,") %>%
-          stringr::str_remove_all(",") %>%
-          stringr::str_trim(), NA_character_
+          stringr::str_extract("(?<=PENALTY on .{1,50}, ).{1,50}(?=, [0-9]{1,2} yard)") %>%
+          # Face Mask penalties include the yardage as string (either 5 Yards or 15 Yards)
+          # We remove the 15 Yards part and just keep the additional info if it's a
+          # 5 yard Face Mask penalty
+          stringr::str_remove("\\([0-9]{2}+ Yards\\)") %>%
+          stringr::str_squish(), NA_character_
       ),
       # Make plays marked with down == 0 as NA:
       down = dplyr::if_else(
@@ -166,12 +108,7 @@ add_nflscrapr_mutations <- function(pbp) {
           .data$field_goal_blocked == 1,
         "blocked", .data$field_goal_result
       ),
-      # Set the kick_distance for extra points by adding 18 to the yardline_100:
-      kick_distance = dplyr::if_else(
-        .data$extra_point_attempt == 1,
-        .data$yardline_100 + 18,
-        .data$kick_distance
-      ),
+
       # Using the indicators make a column with the extra point result:
       extra_point_result = dplyr::if_else(
         .data$extra_point_attempt == 1 &
@@ -198,6 +135,117 @@ add_nflscrapr_mutations <- function(pbp) {
           .data$extra_point_aborted == 1,
         "aborted", .data$extra_point_result
       ),
+
+      # find kickoffs with penalty: a play where the next play is a kickoff
+      # and the prior play wasn't a safety or PAT
+      lead_ko = case_when(
+        dplyr::lead(.data$kickoff_attempt) == 1 &
+          .data$game_id == dplyr::lead(.data$game_id) &
+          !stringr::str_detect(tolower(.data$play_description), "(injured sf )|(tonight's attendance )|(injury update )|(end quarter)|(timeout)|( captains:)|( captains )|( captians:)|( humidity:)|(note - )|( deferred)|(game start )") &
+          !stringr::str_detect(.data$play_description, "GAME ") &
+          !.data$play_description %in% c("GAME", "Two-Minute Warning", "The game has resumed.") &
+          is.na(.data$two_point_conv_result) &
+          is.na(.data$extra_point_result) &
+          is.na(.data$field_goal_result) &
+          (.data$safety == 0 | is.na(.data$safety)) &
+          # because things too messed up before
+             .data$season > 2000 ~ 1,
+        TRUE ~ 0),
+
+      kickoff_attempt = dplyr::if_else(
+        .data$lead_ko == 1, 1, .data$kickoff_attempt
+      ),
+
+      # https://github.com/mrcaseb/nflfastR/issues/199#issuecomment-792321171
+      kickoff_attempt = dplyr::if_else(
+        .data$game_id == "2014_02_ATL_CIN" & .data$play_id == 3498, 1, .data$kickoff_attempt
+      ),
+
+      # Make the possession team for kickoffs be the return team, since that is
+      # more intuitive from the EPA / WPA point of view:
+      posteam = dplyr::case_when(
+        # kickoff_finder is defined below
+        (.data$lead_ko == 1 | .data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$home_team ~ .data$away_team,
+        (.data$lead_ko == 1 | .data$kickoff_attempt == 1 | stringr::str_detect(.data$play_description, kickoff_finder)) & .data$posteam == .data$away_team ~ .data$home_team,
+        TRUE ~ .data$posteam
+      ),
+
+      # Fill in the rows with missing posteam with the lead:
+      posteam = dplyr::if_else(
+        (.data$quarter_end == 1 | .data$posteam == ""),
+        dplyr::lead(.data$posteam),
+        .data$posteam),
+      posteam_id = dplyr::if_else(
+        (.data$quarter_end == 1 | .data$posteam_id == ""),
+        dplyr::lead(.data$posteam_id),
+        .data$posteam_id),
+
+      # remove posteam from END Q2 plays or END Q4 plays (when game goes in OT)
+      # because it doesn't make sense and breaks fixed_drive and fixed_drive_result
+      posteam = dplyr::if_else(
+        stringr::str_detect(.data$play_description, "(END QUARTER 2)|(END QUARTER 4)"),
+        NA_character_, .data$posteam
+      ),
+
+      # Denote whether the home or away team has possession:
+      posteam_type = dplyr::if_else(.data$posteam == .data$home_team, "home", "away"),
+
+      # Column denoting which team is on defense:
+      defteam = dplyr::if_else(
+        .data$posteam == .data$home_team,
+        .data$away_team, .data$home_team
+      ),
+
+      yardline = dplyr::if_else(.data$yardline == "50", "MID 50", .data$yardline),
+      yardline = dplyr::if_else(
+        nchar(.data$yardline) == 0 | is.null(.data$yardline) | .data$yardline == "NULL" | is.na(.data$yardline),
+        dplyr::lead(.data$yardline), .data$yardline
+      ),
+      yardline_number = dplyr::if_else(
+        .data$yardline == "MID 50", 50, .data$yardline_number
+      ),
+      yardline_100 = dplyr::if_else(
+        .data$yardline_side == .data$posteam | .data$yardline == "MID 50",
+        100 - .data$yardline_number, .data$yardline_number
+      ),
+      # Set the kick_distance for extra points by adding 18 to the yardline_100:
+      kick_distance = dplyr::if_else(
+        .data$extra_point_attempt == 1,
+        .data$yardline_100 + 18,
+        .data$kick_distance
+      ),
+      # Create a column with the time in seconds remaining for each half:
+      half_seconds_remaining = dplyr::if_else(
+        .data$quarter %in% c(1, 3),
+        .data$quarter_seconds_remaining + 900,
+        .data$quarter_seconds_remaining),
+      # Create a column with the time in seconds remaining for the game:
+      game_seconds_remaining = dplyr::if_else(
+        .data$quarter %in% c(1, 2, 3, 4),
+        .data$quarter_seconds_remaining + (900 * (4 - as.numeric(.data$quarter))),
+        .data$quarter_seconds_remaining
+      ),
+      # Add column for replay or challenge:
+      replay_or_challenge = stringr::str_detect(
+        .data$play_description, "(Replay Official reviewed)|( challenge(d)? )|(Challenged)") %>%
+        as.numeric(),
+      # Result of replay or challenge:
+      replay_or_challenge_result = dplyr::if_else(
+        .data$replay_or_challenge == 1,
+        dplyr::if_else(
+          stringr::str_detect(
+            tolower(.data$play_description),
+            "( upheld)|( reversed)|( confirmed)"
+          ),
+          stringr::str_extract(
+            tolower(.data$play_description),
+            "( upheld)|( reversed)|( confirmed)"
+          ) %>%
+            stringr::str_trim(), "denied"
+        ),
+        NA_character_
+      ),
+
       # Create the column denoting the categorical description of the pass length:
       pass_length = dplyr::if_else(
         .data$two_point_attempt == 0 &
@@ -525,10 +573,11 @@ add_nflscrapr_mutations <- function(pbp) {
     ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(game_id = as.character(.data$game_id)) %>%
+    fix_scrambles() %>%
     make_model_mutations()
 
 
-  usethis::ui_done("added nflscrapR variables")
+  user_message("added nflscrapR variables", "done")
   return(out)
 }
 
@@ -572,4 +621,22 @@ make_model_mutations <- function(pbp) {
 }
 
 
+fix_scrambles <- function(pbp) {
+  # skip below code if 2005 is not in the data
+  if (!2005 %in% pbp$season) return(pbp)
 
+  pbp %>%
+    dplyr::mutate(
+      scramble_id = paste0(.data$game_id, "_", .data$play_id),
+      qb_scramble = dplyr::if_else(.data$scramble_id %in% scramble_fix, 1, .data$qb_scramble)
+    ) %>%
+    dplyr::select(-"scramble_id")
+
+  # Some notes on the scramble_fix:
+  # This marks scrambles in the 2005 season using charting data
+  # Because NFL did not put scramble in play description during this season
+  # Data from Football Outsiders (thanks to Aaron Schatz!)
+  # 2005 season, Weeks 1-16 are based on charting
+  # 2005 season, Weeks 17-21 are guesses (basically every QB run except those that were a) a loss, b) no gain, or c) on 3/4 down with 1-2 to go).
+  # Plays nullified by penalty are not included.
+}

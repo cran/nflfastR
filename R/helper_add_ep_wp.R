@@ -9,7 +9,7 @@
 # could happen
 add_ep <- function(pbp) {
   out <- pbp %>% add_ep_variables()
-  usethis::ui_done("added ep variables")
+  user_message("added ep variables", "done")
   return(out)
 }
 
@@ -38,17 +38,17 @@ add_air_yac_ep <- function(pbp) {
         total_home_raw_yac_epa = NA_real_,
         total_away_raw_yac_epa = NA_real_
       )
-    usethis::ui_info("No non-NA air_yards detected. air_yac_ep variables set to NA")
+    user_message("No non-NA air_yards detected. air_yac_ep variables set to NA", "info")
   } else {
     out <- pbp %>% add_air_yac_ep_variables()
-    usethis::ui_done("added air_yac_ep variables")
+    user_message("added air_yac_ep variables", "done")
   }
   return(out)
 }
 
 add_wp <- function(pbp) {
   out <- pbp %>% add_wp_variables()
-  usethis::ui_done("added wp variables")
+  user_message("added wp variables", "done")
   return(out)
 }
 
@@ -77,10 +77,10 @@ add_air_yac_wp <- function(pbp) {
         total_home_raw_yac_wpa = NA_real_,
         total_away_raw_yac_wpa = NA_real_
       )
-    usethis::ui_info("No non-NA air_yards detected. air_yac_wp variables set to NA")
+    user_message("No non-NA air_yards detected. air_yac_wp variables set to NA", "info")
   } else {
     out <- pbp %>% add_air_yac_wp_variables()
-    usethis::ui_done("added air_yac_wp variables")
+    user_message("added air_yac_wp variables", "done")
   }
   return(out)
 }
@@ -478,21 +478,12 @@ add_ep_variables <- function(pbp_data) {
       epa = dplyr::if_else(
         .data$defensive_two_point_conv == 1, -2 - .data$ep, .data$epa, missing = .data$epa
       ),
-      # Opponent safety:
-      epa = dplyr::if_else(is.na(.data$td_team) & .data$field_goal_made == 0 &
-                             .data$extra_point_good == 0 &
-                             .data$extra_point_failed == 0 &
-                             .data$extra_point_blocked == 0 &
-                             .data$extra_point_aborted == 0 &
-                             .data$two_point_rush_failed == 0 &
-                             .data$two_point_pass_failed == 0 &
-                             .data$two_point_pass_reception_failed == 0 &
-                             .data$two_point_rush_good == 0 &
-                             .data$two_point_pass_good == 0 &
-                             .data$two_point_pass_reception_good == 0 &
-                             .data$safety == 1,
-                           -2 - .data$ep, .data$epa, missing = .data$epa)
-
+      # Safety:
+      epa = dplyr::case_when(
+        !is.na(.data$safety_team) & .data$safety_team == .data$posteam ~  2 - .data$ep,
+        !is.na(.data$safety_team) & .data$safety_team == .data$defteam ~ -2 - .data$ep,
+        TRUE ~ .data$epa
+      )
       ) %>%
     # Now rename each of the expected points columns to match the style of
     # the updated code:
