@@ -18,14 +18,14 @@
 load_player_stats <- function(qs = FALSE) {
 
   if (isTRUE(qs) && !is_installed("qs")) {
-    usethis::ui_stop("Package {usethis::ui_value('qs')} required for argument {usethis::ui_value('qs = TRUE')}. Please install it.")
+    cli::cli_abort("Package {.val qs} required for argument {.val qs = TRUE}. Please install it.")
   }
 
   if (isTRUE(qs)) {
-    .url <- "https://github.com/guga31bb/nflfastR-data/blob/master/data/player_stats.qs?raw=true"
+    .url <- "https://github.com/nflverse/nflfastR-data/blob/master/data/player_stats.qs?raw=true"
     out <- qs_from_url(.url)
   } else {
-    .url <- "https://github.com/guga31bb/nflfastR-data/blob/master/data/player_stats.rds?raw=true"
+    .url <- "https://github.com/nflverse/nflfastR-data/blob/master/data/player_stats.rds?raw=true"
     con <- url(.url)
     out <- readRDS(con)
     close(con)

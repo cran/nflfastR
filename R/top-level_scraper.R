@@ -324,6 +324,8 @@
 #' \item{defensive_two_point_conv}{Binary indicator whether or not the defense successfully scored on the two point conversion.}
 #' \item{defensive_extra_point_attempt}{Binary indicator whether or not the defense was able to have an attempt on an extra point attempt, this results following a blocked attempt that the defense recovers the ball.}
 #' \item{defensive_extra_point_conv}{Binary indicator whether or not the defense successfully scored on an extra point attempt.}
+#' \item{safety_player_name}{String name for the player who scored a safety.}
+#' \item{safety_player_id}{Unique identifier for the player who scored a safety.}
 #' \item{season}{4 digit number indicating to which season the game belongs to.}
 #' \item{cp}{Numeric value indicating the probability for a complete pass based on comparable game situations.}
 #' \item{cpoe}{For a single pass play this is 1 - cp when the pass was completed or 0 - cp when the pass was incomplete. Analyzed for a whole game or season an indicator for the passer how much over or under expectation his completion percentage was.}
@@ -414,24 +416,24 @@ fast_scraper <- function(game_ids,
     lifecycle::deprecate_warn(
       when = "4.0.0",
       what = "fast_scraper(pp = )",
-      details = glue::glue(
+      details = cli::cli_text(c(
         "We have dropped the in-package activation of parallel processing as ",
         "this is considered bad practice.\n",
         "Please choose an appropriate plan before calling the function, e.g. ",
-        "{usethis::ui_code('future::plan(\"multisession\")')}"
-      )
+        "{.code future::plan(\"multisession\")}"
+      ))
     )
   }
 
   if (!is.vector(game_ids) && is.data.frame(game_ids)) game_ids <- game_ids$game_id
 
-  if (!is.vector(game_ids)) usethis::ui_stop("Param {usethis::ui_code('game_ids')} is not a valid vector!")
+  if (!is.vector(game_ids)) cli::cli_abort("Param {.code game_ids} is not a valid vector!")
 
   if (length(game_ids) > 1 && is_sequential()) {
-    usethis::ui_info(
+    cli::cli_alert_info(
       c(
         "It is recommended to use parallel processing when trying to load multiple games.",
-        "Please consider running {usethis::ui_code('future::plan(\"multisession\")')}!",
+        "Please consider running {.code future::plan(\"multisession\")}! ",
         "Will go on sequentially..."
       )
     )
@@ -467,7 +469,7 @@ fast_scraper <- function(game_ids,
 
   if (!in_builder) {
     str <- paste0(my_time(), " | Procedure completed.")
-    usethis::ui_done("{usethis::ui_field(str)}")
+    cli::cli_alert_success("{.field {str}}")
   }
   return(pbp)
 }
@@ -522,20 +524,20 @@ fast_scraper_roster <- function(seasons, pp = lifecycle::deprecated()) {
     lifecycle::deprecate_warn(
       when = "4.0.0",
       what = "fast_scraper_roster(pp = )",
-      details = glue::glue(
+      details = cli::cli_text(c(
         "We have dropped the in-package activation of parallel processing as ",
         "this is considered bad practice.\n",
         "Please choose an appropriate plan before calling the function, e.g.",
-        "{usethis::ui_code('future::plan(\"multisession\")')}"
-      )
+        "{.code future::plan(\"multisession\")}"
+      ))
     )
   }
 
   if (length(seasons) > 1 && is_sequential()) {
-    usethis::ui_info(
+    cli::cli_alert_info(
       c(
-        "It is recommended to use parallel processing when trying to load multiple seasons.",
-        "Please consider running {usethis::ui_code('future::plan(\"multisession\")')}!",
+        "It is recommended to use parallel processing when trying to load multiple seasons. ",
+        "Please consider running {.code future::plan(\"multisession\")}! ",
         "Will go on sequentially..."
       )
     )
@@ -596,19 +598,19 @@ fast_scraper_schedules <- function(seasons, pp = lifecycle::deprecated()) {
     lifecycle::deprecate_warn(
       when = "4.0.0",
       what = "fast_scraper_schedules(pp = )",
-      details = glue::glue(
+      details = cli::cli_text(c(
         "We have dropped the in-package activation of parallel processing as ",
         "this is considered bad practice.\n",
         "Please choose an appropriate plan before calling the function, e.g.",
-        "{usethis::ui_code('future::plan(\"multisession\")')}"
-      )
+        "{.code future::plan(\"multisession\")}"
+      ))
     )
   }
   if (length(seasons) > 1 && is_sequential()) {
-    usethis::ui_info(
+    cli::cli_alert_info(
       c(
-        "It is recommended to use parallel processing when trying to load multiple seasons.",
-        "Please consider running {usethis::ui_code('future::plan(\"multisession\")')}!",
+        "It is recommended to use parallel processing when trying to load multiple seasons. ",
+        "Please consider running {.code future::plan(\"multisession\")}! ",
         "Will go on sequentially..."
       )
     )

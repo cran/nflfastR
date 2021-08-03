@@ -42,9 +42,9 @@
 decode_player_ids <- function(pbp, ..., fast = TRUE) {
   if (isFALSE(fast)) {
     if (nrow(pbp) > 1000 && is_sequential()) {
-      usethis::ui_info(c(
+      cli::cli_alert_info(c(
         "It is recommended to use parallel processing when trying to to decode big data frames.",
-        "Please consider running {usethis::ui_code('future::plan(\"multisession\")')}!",
+        "Please consider running {.code future::plan(\"multisession\")}! ",
         "Will go on sequentially..."
       ))
     }
@@ -60,15 +60,15 @@ decode_player_ids <- function(pbp, ..., fast = TRUE) {
       )
   } else if (isTRUE(fast)) {
     if (!is_installed("gsisdecoder")) {
-      usethis::ui_stop("Package {usethis::ui_value('gsisdecoder')} required for fast decoding. Please install it with {usethis::ui_code('install.packages(\"gsisdecoder\")')}.")
+      cli::cli_abort("Package {.val gsisdecoder} required for fast decoding. Please install it with {.code install.packages(\"gsisdecoder\")}.")
     }
     # No need to inform that decoding starts since it's very fast
-    # usethis::ui_todo("Start decoding player ids...")
+    # cli::cli_ul("Start decoding player ids...")
 
     ret <- pbp %>%
       dplyr::mutate_at(
         dplyr::vars(
-          tidyselect::any_of(c("passer_id", "rusher_id", "receiver_id", "id")),
+          tidyselect::any_of(c("passer_id", "rusher_id", "receiver_id", "id", "fantasy_id")),
           tidyselect::ends_with("player_id")
         ),
         gsisdecoder::decode_ids

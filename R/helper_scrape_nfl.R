@@ -10,7 +10,7 @@
 get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
 
   if (isTRUE(qs) && !is_installed("qs")) {
-    usethis::ui_stop("Package {usethis::ui_value('qs')} required for argument {usethis::ui_value('qs = TRUE')}. Please install it.")
+    cli::cli_abort("Package {.val qs} required for argument {.val qs = TRUE}. Please install it.")
   }
 
   combined <- data.frame()
@@ -58,7 +58,11 @@ get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
         if(isTRUE(qs)) raw_data <- qs::qread(p)
       }
 
-      season_type <- dplyr::if_else(week <= 17, "REG", "POST")
+      season_type <- dplyr::case_when(
+        season <= 2020 & week <= 17 ~ "REG",
+        season >= 2021 & week <= 18 ~ "REG",
+        TRUE ~ "POST"
+      )
 
       # game_info <- raw_data$data$viewer$gameDetail
 
@@ -317,7 +321,15 @@ get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
         combined <- combined %>%
           dplyr::mutate(
             first_down_pass = dplyr::if_else(.data$pass_attempt == 1 & .data$first_down == 1, 1, .data$first_down_pass),
-            first_down_rush = dplyr::if_else(.data$rush_attempt == 1 & .data$first_down == 1, 1, .data$first_down_rush)
+            first_down_rush = dplyr::if_else(.data$rush_attempt == 1 & .data$first_down == 1, 1, .data$first_down_rush),
+
+            third_down_converted = dplyr::if_else(.data$first_down == 1 & .data$down == 3, 1, .data$third_down_converted),
+            fourth_down_converted = dplyr::if_else(.data$first_down == 1 & .data$down == 4, 1, .data$fourth_down_converted),
+
+            third_down_failed = dplyr::if_else(.data$first_down == 0 & .data$down == 3, 1, .data$third_down_failed),
+            fourth_down_failed = dplyr::if_else(.data$first_down == 0 & .data$down == 4 &
+                                                  .data$play_type_nfl != "FIELD_GOAL" & .data$play_type_nfl != "PUNT" & .data$play_type_nfl != "PENALTY",
+                                                1, .data$fourth_down_failed)
           )
       }
 
