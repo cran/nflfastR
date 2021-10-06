@@ -8,8 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: align='right' alt='logo' width='120'}}
 
-A set of functions to access National Football
-    League play-by-play data from <https://www.nfl.com/>.
+A set of functions to access National Football League play-by-play data from <https://www.nfl.com/>.
 }
 \section{Parallel Processing and Progress Updates in nflfastR}{
 \subsection{Preface}{
@@ -126,6 +125,7 @@ Other contributors:
   \item Ron Yurko \email{ryurko@stat.cmu.edu} [contributor]
   \item Samuel Ventura \email{samventura22@gmail.com} [contributor]
   \item Tan Ho [contributor]
+  \item John Edwards \email{edwards1860@gmail.com} [contributor]
 }
 
 }

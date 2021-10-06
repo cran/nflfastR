@@ -86,7 +86,7 @@ update_db <- function(dbdir = ".",
 
   # get completed games using Lee's file (thanks Lee!)
   user_message("Checking for missing completed games...", "todo")
-  completed_games <- load_lees_games() %>%
+  completed_games <- nflreadr::load_schedules() %>%
     # completed games since 1999, excluding the broken games
     dplyr::filter(.data$season >= 1999, !is.na(.data$result), !.data$game_id %in% c("1999_01_BAL_STL", "2000_06_BUF_MIA", "2000_03_SD_KC")) %>%
     dplyr::arrange(.data$gameday) %>%
@@ -97,7 +97,6 @@ update_db <- function(dbdir = ".",
 
   # rebuild db if number of missing games is too large
   if(length(missing) > 16) {# limit set to >16 to make sure this doesn't get triggered on gameday (e.g. week 17)
-    # message("The number of missing games is so large that rebuilding the database is more efficient.")
     build_db(tblname, connection, show_message = FALSE, rebuild = as.numeric(unique(stringr::str_sub(missing, 1, 4))))
     missing <- get_missing_games(completed_games, connection, tblname)
   }
@@ -123,25 +122,25 @@ update_db <- function(dbdir = ".",
 # this is a helper function to build nflfastR database from Scratch
 build_db <- function(tblname = "nflfastR_pbp", db_conn, rebuild = FALSE, show_message = TRUE) {
 
-  valid_seasons <- load_lees_games() %>%
+  valid_seasons <- nflreadr::load_schedules() %>%
     dplyr::filter(.data$season >= 1999 & !is.na(.data$result)) %>%
     dplyr::group_by(.data$season) %>%
     dplyr::summarise() %>%
     dplyr::ungroup()
 
   if (all(rebuild == TRUE)) {
-    cli::cli_ul("{my_time()} | Purging the complete data table {.val tblname} in your connected database...")
+    cli::cli_ul("{my_time()} | Purging the complete data table {.val {tblname}} in your connected database...")
     DBI::dbRemoveTable(db_conn, tblname)
     seasons <- valid_seasons %>% dplyr::pull("season")
     cli::cli_ul("{my_time()} | Starting download of {length(seasons)} seasons between {min(seasons)} and {max(seasons)}...")
   } else if (is.numeric(rebuild) & all(rebuild %in% valid_seasons$season)) {
     string <- paste0(rebuild, collapse = ", ")
-    if (show_message){cli::cli_ul("{my_time()} | Purging {string} season(s) from the data table {.val tblname} in your connected database...")}
+    if (show_message){cli::cli_ul("{my_time()} | Purging {string} season(s) from the data table {.val {tblname}} in your connected database...")}
     DBI::dbExecute(db_conn, glue::glue_sql("DELETE FROM {`tblname`} WHERE season IN ({vals*})", vals = rebuild, .con = db_conn))
     seasons <- valid_seasons %>% dplyr::filter(.data$season %in% rebuild) %>% dplyr::pull("season")
     cli::cli_ul("{my_time()} | Starting download of the {string} season(s)...")
   } else if (all(rebuild == "NEW")) {
-    cli::cli_alert_info("{my_time()} | Can't find the data table {.val tblname} in your database. Will load the play by play data from scratch.")
+    cli::cli_alert_info("{my_time()} | Can't find the data table {.val {tblname}} in your database. Will load the play by play data from scratch.")
     seasons <- valid_seasons %>% dplyr::pull("season")
     cli::cli_ul("{my_time()} | Starting download of {length(seasons)} seasons between {min(seasons)} and {max(seasons)}...")
   } else {
@@ -151,7 +150,7 @@ build_db <- function(tblname = "nflfastR_pbp", db_conn, rebuild = FALSE, show_me
 
   if (!is.null(seasons)) {
     # this function lives in R/utils.R
-    load_pbp(seasons, dbConnection = db_conn, tablename = tblname, qs = is_installed("qs"))
+    write_pbp(seasons, dbConnection = db_conn, tablename = tblname)
   }
 }
 
