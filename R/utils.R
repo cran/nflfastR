@@ -3,7 +3,7 @@
 message_completed <- function(x, in_builder = FALSE) {
   if (isFALSE(in_builder)) {
     str <- paste0(my_time(), " | ", x)
-    cli::cli_alert_success("{{.field {str}}}")
+    cli::cli_alert_success("{.field {str}}")
   } else if (in_builder) {
     cli::cli_alert_success("{my_time()} | {x}")
   }
@@ -172,7 +172,18 @@ write_pbp <- function(seasons, dbConnection, tablename){
   p <- progressr::progressor(along = seasons)
   purrr::walk(seasons, function(x, p){
     pbp <- nflreadr::load_pbp(x)
+    if (!DBI::dbExistsTable(dbConnection, tablename)){
+      pbp <- dplyr::bind_rows(default_play, pbp)
+    }
     DBI::dbWriteTable(dbConnection, tablename, pbp, append = TRUE)
     p("loading...")
   }, p)
+}
+
+make_nflverse_data <- function(data, type = c("play by play")){
+  attr(data, "nflverse_timestamp") <- Sys.time()
+  attr(data, "nflverse_type") <- type
+  attr(data, "nflfastR_version") <- packageVersion("nflfastR")
+  class(data) <- c("nflverse_data", "tbl_df", "tbl", "data.table", "data.frame")
+  data
 }
