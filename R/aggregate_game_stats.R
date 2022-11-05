@@ -17,6 +17,10 @@
 #' \describe{
 #' \item{player_id}{ID of the player. Use this to join to other sources.}
 #' \item{player_name}{Name of the player}
+#' \item{player_display_name}{Full name of the player}
+#' \item{position}{Position of the player}
+#' \item{position_group}{Position group of the player}
+#' \item{headshot_url}{URL to a player headshot image}
 #' \item{games}{The number of games where the player recorded passing, rushing or receiving stats.}
 #' \item{recent_team}{Most recent team player appears in `pbp` with.}
 #' \item{season}{Season if `weekly` is `TRUE`}
@@ -93,11 +97,13 @@
 #' }
 calculate_player_stats <- function(pbp, weekly = FALSE) {
 
+  # need newer version of nflreadr to use load_players
+  rlang::check_installed("nflreadr (>= 1.3.0)", "to join player information.")
 
 # Prepare data ------------------------------------------------------------
 
   # load plays with multiple laterals
-  mult_lats <- nflreadr::rds_from_url("https://github.com/mrcaseb/nfl-data/raw/master/data/lateral_yards/multiple_lateral_yards.rds") %>%
+  mult_lats <- nflreadr::rds_from_url("https://github.com/nflverse/nflverse-data/releases/download/misc/multiple_lateral_yards.rds") %>%
     dplyr::mutate(
       season = substr(.data$game_id, 1, 4) %>% as.integer(),
       week = substr(.data$game_id, 6, 7) %>% as.integer()
@@ -157,8 +163,22 @@ calculate_player_stats <- function(pbp, weekly = FALSE) {
     dplyr::select(.data$season, .data$season_type, .data$week) %>%
     dplyr::distinct()
 
-  # load gsis_ids of FBs and RBs for RACR
-  racr_ids <- nflreadr::qs_from_url("https://github.com/nflverse/nflfastR-roster/raw/master/data/nflfastR-RB_ids.qs")
+  # we'll join some player information like position or full name later
+  # so we load it here to be able to use it for racr ids as well
+  player_info <- nflreadr::load_players() %>%
+    dplyr::select(
+      "player_id" = "gsis_id",
+      "player_display_name" = "display_name",
+      "player_name" = "short_name",
+      "position",
+      "position_group",
+      "headshot_url" = "headshot"
+    )
+
+  # load gsis_ids of RBs, FBs and HBs for RACR
+  racr_ids <- player_info %>%
+    dplyr::filter(.data$position %in% c("RB", "FB", "HB")) %>%
+    dplyr::select("gsis_id" = "player_id")
 
 # Passing stats -----------------------------------------------------------
 
@@ -437,7 +457,7 @@ calculate_player_stats <- function(pbp, weekly = FALSE) {
     # a receiving two point are dropped in any other join
     dplyr::full_join(rec_two_points, by = c("player_id", "week", "season", "name_receiver", "team_receiver")) %>%
     dplyr::mutate(receiving_2pt_conversions = dplyr::if_else(is.na(.data$receiving_2pt_conversions), 0L, .data$receiving_2pt_conversions)) %>%
-    dplyr::filter(!is.na(.data$player_id))
+    dplyr::filter(!is.na(.data$player_id), !is.na(.data$name_receiver))
 
   rec_df_nas <- is.na(rec_df)
   epa_index <- which(dimnames(rec_df_nas)[[2]] == c("receiving_epa", "racr", "target_share", "air_yards_share", "wopr"))
@@ -504,7 +524,7 @@ calculate_player_stats <- function(pbp, weekly = FALSE) {
       "special_teams_tds"
 
     ))) %>%
-    dplyr::filter(!is.na(.data$player_id))
+    dplyr::filter(!is.na(.data$player_id), !is.na(.data$player_name))
 
   player_df_nas <- is.na(player_df)
   epa_index <- which(dimnames(player_df_nas)[[2]] %in% c("passing_epa", "rushing_epa", "receiving_epa", "dakota", "racr", "target_share", "air_yards_share", "wopr", "pacr"))
@@ -610,6 +630,21 @@ calculate_player_stats <- function(pbp, weekly = FALSE) {
         dplyr::everything()
       )
   }
+
+  # data is missing position and player name can be messed up in pbp
+  # so we join player information next
+  player_df <- player_df %>%
+    dplyr::select(-"player_name") %>%
+    dplyr::left_join(player_info, by = "player_id") %>%
+    dplyr::select(
+      "player_id",
+      "player_name",
+      "player_display_name",
+      "position",
+      "position_group",
+      "headshot_url",
+      dplyr::everything()
+    )
 
   return(player_df)
 }

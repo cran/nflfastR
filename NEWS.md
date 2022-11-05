@@ -1,3 +1,25 @@
+# nflfastR 4.5.0
+
+## New (experimental) functions
+* Added new function `calculate_player_stats_def()` that aggregates defensive player stats either at game level or overall. (#288)
+* The situation report `nflverse_sitrep` which is an alias of the already available `report()`
+* Added new function `calculate_player_stats_kicking()` that aggregates player stats for field goals and extra points at game level or overall. (#381)
+* Added new function `calculate_series_conversion_rates()` that computes series conversion and series result rates at a game level or season level. (#393)
+
+## Bugfixes and Minor Improvements
+
+* Internal change to `calculate_player_stats()` that reflects new nflverse data infrastructure.
+* `calculate_player_stats()` now unifies player names and joins the following player information via `nflreadr::load_players()`:
+  - `player_display_name` - Full name of the player
+  - `position` - Position of the player
+  - `position_group` - Position group of the player
+  - `headshot_url` - URL to a player headshot image
+* Make data work in 2022 (hopefully)
+* Fix Amon-Ra St. Brown breaking the name parser
+* Add gsis_id patch to `clean_pbp()`.
+* `calculate_player_stats_def()` failed in situations where play-by-play data is missing certain stats. (#382)
+* Spot-fixing `calculate_player_stats()` for `NA` names.
+
 # nflfastR 4.4.0
 
 ## New Functions, Options, Data

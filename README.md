@@ -33,7 +33,7 @@ data. `nflfastR` expands upon the features of nflscrapR:
 -   Includes series information, including series number and series
     success
 -   Hosts [a repository of play-by-play data going back to
-    1999](https://github.com/nflverse/nflfastR-data) for very quick
+    1999](https://github.com/nflverse/nflverse-pbp) for very quick
     access
 -   Features models for Expected Points, Win Probability, Completion
     Probability, and Yards After the Catch (see section below)
@@ -67,7 +67,7 @@ or prebuilt from the [development repo](https://nflverse.r-universe.dev)
 with:
 
 ``` r
-install.packages("nflfastR", repos = "https://nflverse.r-universe.dev")
+install.packages("nflfastR", repos = c("https://nflverse.r-universe.dev", getOption("repos")))
 ```
 
 ## Usage
@@ -85,16 +85,15 @@ Descriptions](https://www.nflfastr.com/articles/field_descriptions.html)**
 article, or by accessing the `field_descriptions` dataframe from the
 package.
 
-## Data repository
+## Data access
 
-Even though `nflfastR` is very fast, **for historical games we recommend
-downloading the data from
-[here](https://github.com/nflverse/nflfastR-data)**. These data sets
-include play-by-play data of complete seasons going back to 1999 and we
-will update them in 2020 once the season starts. The files contain both
-regular season and postseason data, and one can use game_type or week to
-figure out which games occurred in the postseason. Data are available as
-.csv.gz, .parquet, or .rds.
+Even though `nflfastR` is very fast, **we recommend downloading the data
+from [here](https://github.com/nflverse/nflverse-data/releases/tag/pbp)
+or using the `nflreadr` package**. These data sets include play-by-play
+data of complete seasons going back to 1999 and are updated nightly
+during the season. The files contain both regular season and postseason
+data, and one can use game_type or week to figure out which games
+occurred in the postseason.
 
 ## nflfastR models
 

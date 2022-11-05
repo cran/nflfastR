@@ -1,7 +1,7 @@
 Type: Package
 Package: nflfastR
 Title: Functions to Efficiently Access NFL Play by Play Data
-Version: 4.4.0
+Version: 4.5.0
 Authors@R: 
     c(person(given = "Sebastian",
              family = "Carl",
@@ -39,10 +39,10 @@ License: MIT + file LICENSE
 URL: https://www.nflfastr.com/, https://github.com/nflverse/nflfastR
 BugReports: https://github.com/nflverse/nflfastR/issues
 Depends: R (>= 3.6.0)
-Imports: cli (>= 3.0.0), curl, data.table (>= 1.14.0), dplyr,
-        fastrmodels (>= 1.0.1), furrr, future, glue, janitor, mgcv,
-        nflreadr (>= 1.2.0), progressr (>= 0.6.0), rlang (>= 0.4.7),
-        stringr (>= 1.3.0), tibble (>= 3.0), tidyr (>= 1.0.0),
+Imports: cli (>= 3.0.0), curl, data.table (>= 1.14.0), dplyr (>=
+        1.0.0), fastrmodels (>= 1.0.1), furrr, future, glue, janitor,
+        mgcv, nflreadr (>= 1.2.0), progressr (>= 0.6.0), rlang (>=
+        0.4.7), stringr (>= 1.3.0), tibble (>= 3.0), tidyr (>= 1.0.0),
         tidyselect (>= 1.1.0), xgboost (>= 1.1)
 Suggests: crayon (>= 1.3.4), DBI, DT, gsisdecoder, httr, jsonlite,
         lifecycle (>= 0.2.0), nflseedR (>= 1.0.2), purrr (>= 0.3.0), qs
@@ -51,7 +51,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
 NeedsCompilation: no
-Packaged: 2022-08-06 21:24:20 UTC; S.Carl
+Packaged: 2022-11-05 12:39:38 UTC; S.Carl
 Author: Sebastian Carl [aut],
   Ben Baldwin [cre, aut],
   Lee Sharpe [ctb],
@@ -62,4 +62,4 @@ Author: Sebastian Carl [aut],
   John Edwards [ctb]
 Maintainer: Ben Baldwin <bbaldwin206@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-08-06 22:00:02 UTC
+Date/Publication: 2022-11-05 14:40:02 UTC
