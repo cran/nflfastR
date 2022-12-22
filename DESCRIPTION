@@ -1,7 +1,7 @@
 Type: Package
 Package: nflfastR
 Title: Functions to Efficiently Access NFL Play by Play Data
-Version: 4.5.0
+Version: 4.5.1
 Authors@R: 
     c(person(given = "Sebastian",
              family = "Carl",
@@ -46,12 +46,13 @@ Imports: cli (>= 3.0.0), curl, data.table (>= 1.14.0), dplyr (>=
         tidyselect (>= 1.1.0), xgboost (>= 1.1)
 Suggests: crayon (>= 1.3.4), DBI, DT, gsisdecoder, httr, jsonlite,
         lifecycle (>= 0.2.0), nflseedR (>= 1.0.2), purrr (>= 0.3.0), qs
-        (>= 0.25.1), rmarkdown, RSQLite, testthat
+        (>= 0.25.1), rmarkdown, RSQLite, testthat (>= 3.0.0)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
+Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2022-11-05 12:39:38 UTC; S.Carl
+Packaged: 2022-12-22 15:19:41 UTC; S.Carl
 Author: Sebastian Carl [aut],
   Ben Baldwin [cre, aut],
   Lee Sharpe [ctb],
@@ -62,4 +63,4 @@ Author: Sebastian Carl [aut],
   John Edwards [ctb]
 Maintainer: Ben Baldwin <bbaldwin206@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-11-05 14:40:02 UTC
+Date/Publication: 2022-12-22 16:30:02 UTC

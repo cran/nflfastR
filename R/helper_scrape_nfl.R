@@ -7,7 +7,7 @@
 # Build a tidy version of scraped NFL data
 #
 # @param id Specifies the game
-get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
+get_pbp_nfl <- function(id, dir = NULL, qs = FALSE, ...) {
 
   warn <- 0
 
@@ -169,13 +169,9 @@ get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
 
       # if I don't put this here it breaks
       suppressWarnings(
-        pbp_stats <-
-          furrr::future_map(unique(stats$playId), function(x, s) {
-            sum_play_stats(x, s)
-          }, stats)
+        pbp_stats <- lapply(unique(stats$playId), sum_play_stats, stats)
       )
-
-      pbp_stats <- dplyr::bind_rows(pbp_stats)
+      pbp_stats <- data.table::rbindlist(pbp_stats) %>% tibble::as_tibble()
 
       combined <- game_info %>%
         dplyr::bind_cols(plays %>% dplyr::select(-"playStats", -"game_id")) %>%
@@ -310,11 +306,9 @@ get_pbp_nfl <- function(id, dir = NULL, qs = FALSE) {
           )
 
         ) %>%
-        dplyr::mutate(
-          dplyr::across(
-            .cols = tidyselect::where(is.character),
-            .fns = ~dplyr::na_if(.x, "")
-          )
+        dplyr::mutate_if(
+          .predicate = is.character,
+          .funs = ~dplyr::na_if(.x, "")
         )
 
       # fix for games where home_team == away_team and fields are messed up

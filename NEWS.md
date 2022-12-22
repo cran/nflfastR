@@ -1,3 +1,12 @@
+# nflfastR 4.5.1
+
+* New implementation of tests to be able to identify breaking changes in reverse dependencies (#396, #406)
+* `calculate_standings()` no more freezes when computing standings from schedules where some games are missing results, i.e. upcoming games.
+* Bug fix that caused problems with upcoming dplyr and tidyselect updates that weren't reverse compatible.
+* Significant performance improvements of internal functions. (#402)
+* Wrap examples in `try()` to avoid CRAN problems. (#404)
+* Fixed a bug where `calculate_standings()` wasn't able to handle nflverse pbp data. (#404)
+
 # nflfastR 4.5.0
 
 ## New (experimental) functions
