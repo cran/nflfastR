@@ -1,7 +1,7 @@
 Type: Package
 Package: nflfastR
 Title: Functions to Efficiently Access NFL Play by Play Data
-Version: 4.5.1
+Version: 4.6.0
 Authors@R: 
     c(person(given = "Sebastian",
              family = "Carl",
@@ -52,7 +52,7 @@ LazyData: true
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2022-12-22 15:19:41 UTC; S.Carl
+Packaged: 2023-10-13 17:41:21 UTC; S.Carl
 Author: Sebastian Carl [aut],
   Ben Baldwin [cre, aut],
   Lee Sharpe [ctb],
@@ -63,4 +63,4 @@ Author: Sebastian Carl [aut],
   John Edwards [ctb]
 Maintainer: Ben Baldwin <bbaldwin206@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-12-22 16:30:02 UTC
+Date/Publication: 2023-10-20 15:30:07 UTC
