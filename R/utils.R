@@ -38,26 +38,17 @@ custom_mode <- function(x, na.rm = TRUE) {
 }
 
 rule_header <- function(x) {
-  rlang::inform(
-    cli::rule(
-      left = ifelse(is_installed("crayon"), crayon::bold(x), glue::glue("\033[1m{x}\033[22m")),
-      right = paste0("nflfastR version ", utils::packageVersion("nflfastR")),
-      width = getOption("width")
-    )
-  )
+  print(cli::rule(
+    left = cli::style_bold(x),
+    right = paste("nflfastR version", utils::packageVersion("nflfastR")),
+  ))
 }
 
 rule_footer <- function(x) {
-  rlang::inform(
-    cli::rule(
-      left = ifelse(is_installed("crayon"), crayon::bold(x), glue::glue("\033[1m{x}\033[22m")),
-      width = getOption("width")
-    )
-  )
+  print(cli::rule(
+    left = cli::style_bold(x)
+  ))
 }
-
-# read qs files form an url
-qs_from_url <- function(url) qs::qdeserialize(curl::curl_fetch_memory(url)$content)
 
 # read rds that has been pre-fetched
 read_raw_rds <- function(raw) {
@@ -211,7 +202,7 @@ fetch_raw <- function(game_id,
 release_bullets <- function() {
   c(
     '`devtools::check_mac_release()`',
-    '`rhub::check_for_cran(email = "mrcaseb@gmail.com", show_status = FALSE)`',
+    '`rhub::rhub_check(platforms = rhub::rhub_platforms()$name[rhub::rhub_platforms()$name != "rchk"])`',
     '`pkgdown::check_pkgdown()`',
     '`usethis::use_tidy_thanks()`',
     NULL

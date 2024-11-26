@@ -5,6 +5,12 @@
 
 #' Get Official Game Stats on Defense
 #'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' This function was deprecated because we have a new, much better and
+#' harmonized approach in [`calculate_stats()`].
+#'
 #' @param pbp A Data frame of NFL play-by-play data typically loaded with
 #'   [load_pbp()] or [build_nflfastR_pbp()]. If the data doesn't include the variable
 #'   `qb_epa`, the function `add_qb_epa()` will be called to add it.
@@ -14,6 +20,7 @@
 #'   either at the game level or at the level of the entire data frame passed.
 #' @return A data frame of defensive player stats. See dictionary (# TODO)
 #' @export
+#' @keywords internal
 #' @seealso The function [load_player_stats()] and the corresponding examples
 #' on [the nflfastR website](https://www.nflfastr.com/articles/nflfastR.html#example-11-replicating-official-stats)
 #' @examples
@@ -59,6 +66,12 @@
 
 calculate_player_stats_def <- function(pbp, weekly = FALSE) {
 
+  lifecycle::deprecate_warn(
+    "5.0",
+    "calculate_player_stats_def()",
+    "calculate_stats()"
+  )
+
   # need newer version of nflreadr to use load_players
   rlang::check_installed("nflreadr (>= 1.3.0)")
 
@@ -80,6 +93,10 @@ calculate_player_stats_def <- function(pbp, weekly = FALSE) {
       nflfastR::decode_player_ids()
 
   })
+
+  stype <- data %>%
+    dplyr::select("season", "week", "season_type") %>%
+    dplyr::distinct()
 
   # Tackling stats -----------------------------------------------------------
 
@@ -512,11 +529,13 @@ calculate_player_stats_def <- function(pbp, weekly = FALSE) {
         ),
       by = "player_id"
     ) %>%
+    dplyr::left_join(stype, by = c("season", "week")) %>%
     dplyr::select(tidyselect::any_of(c(
 
       # game information
       "season",
       "week",
+      "season_type",
 
       # id information
       "player_id",
