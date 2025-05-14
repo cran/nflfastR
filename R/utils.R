@@ -66,7 +66,7 @@ maybe_valid <- function(id) {
     is.character(id),
     substr(id, 1, 4) %in% seq.int(1999, as.integer(format(Sys.Date(), "%Y")) + 1, 1),
     as.integer(substr(id, 6, 7)) %in% seq_len(22),
-    str_extract_all(id, "(?<=_)[:upper:]{2,3}")[[1]] %in% nflfastR::teams_colors_logos$team_abbr
+    stringr::str_extract_all(id, "(?<=_)[:upper:]{2,3}")[[1]] %in% nflfastR::teams_colors_logos$team_abbr
   )
 }
 
@@ -130,7 +130,7 @@ write_pbp <- function(seasons, dbConnection, tablename){
 make_nflverse_data <- function(data, type = c("play by play")){
   attr(data, "nflverse_timestamp") <- Sys.time()
   attr(data, "nflverse_type") <- type
-  attr(data, "nflfastR_version") <- packageVersion("nflfastR")
+  attr(data, "nflfastR_version") <- utils::packageVersion("nflfastR")
   class(data) <- c("nflverse_data", "tbl_df", "tbl", "data.table", "data.frame")
   data
 }
@@ -202,9 +202,96 @@ fetch_raw <- function(game_id,
 release_bullets <- function() {
   c(
     '`devtools::check_mac_release()`',
-    '`rhub::rhub_check(platforms = rhub::rhub_platforms()$name[rhub::rhub_platforms()$name != "rchk"])`',
+    '`nflfastR:::my_rhub_check()`',
     '`pkgdown::check_pkgdown()`',
-    '`usethis::use_tidy_thanks()`',
+    '`nflfastR:::nflverse_thanks()`',
     NULL
+  )
+}
+
+load_model <- function(name){
+  model <- switch(name,
+    "ep" = fastrmodels::ep_model,
+    "cp" = fastrmodels::cp_model,
+    "wp" = fastrmodels::wp_model,
+    "wp_spread" = fastrmodels::wp_model_spread,
+    "fg" = fastrmodels::fg_model,
+    "xpass" = fastrmodels::xpass_model,
+    "xyac" = fastrmodels::xyac_model
+  )
+
+  # fastrmodels v2 introduced raw model vectors to make sure the models
+  # are compatible with future xgboost versions
+  out <- if (is.raw(model)) {
+    xgboost::xgb.load.raw(model)
+  } else {
+    model
+  }
+  out
+}
+
+my_rhub_check <- function() {
+  cli::cli_text("Please run the following code")
+  cli::cli_text(
+    "{.run rhub::rhub_check(platforms = nflfastR:::rhub_check_platforms())}"
+  )
+}
+
+rhub_check_platforms <- function(){
+  # plts created with
+  # out <- paste0('"', rhub::rhub_platforms()$name, '"', collapse = ",\n")
+  # cli::cli_code(paste0(
+  #   "plts <- c(\n", out, "\n)"
+  # ))
+
+  plts <- c(
+    "linux",
+    "m1-san",
+    "macos",
+    "macos-arm64",
+    "windows",
+    "atlas",
+    "c23",
+    "clang-asan",
+    "clang-ubsan",
+    "clang16",
+    "clang17",
+    "clang18",
+    "clang19",
+    "clang20",
+    "donttest",
+    "gcc-asan",
+    "gcc13",
+    "gcc14",
+    "gcc15",
+    "intel",
+    "mkl",
+    "nold",
+    "noremap",
+    "nosuggests",
+    "rchk",
+    "ubuntu-clang",
+    "ubuntu-gcc12",
+    "ubuntu-next",
+    "ubuntu-release",
+    "valgrind"
+  )
+  exclude <- c("rchk", "nosuggests", "valgrind")
+  plts[!plts %in% exclude]
+}
+
+nflverse_thanks <- function(){
+  cli::cli_text("Run the following code and copy/paste its output to NEWS.md")
+
+  cli::cli_code(
+    '
+    contributors <- usethis::use_tidy_thanks()
+    paste(
+      "Thank you to",
+      glue::glue_collapse(
+        paste0("&#x0040;", contributors), sep = ", ", last = ", and "
+      ),
+      "for their questions, feedback, and contributions towards this release."
+    )'
   )
 }
