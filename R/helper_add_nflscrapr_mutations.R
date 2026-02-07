@@ -92,10 +92,15 @@ add_nflscrapr_mutations <- function(pbp) {
           stringr::str_remove("\\([0-9]{2}+ Yards\\)") |>
           stringr::str_squish(), NA_character_
       ),
-      # The new "dynamic Kickoff" in the 2024 season introduces a new penalty type
+      # The new "dynamic Kickoff" in the 2024 season introduces new penalty types
       penalty_type = dplyr::if_else(
         .data$penalty == 1 & stringr::str_detect(tolower(.data$play_description), "kickoff short of landing zone"),
         "Kickoff Short of Landing Zone",
+        .data$penalty_type
+      ),
+      penalty_type = dplyr::if_else(
+        .data$penalty == 1 & stringr::str_detect(tolower(.data$play_description), "kickoff out of bounds"),
+        "Kickoff Out of Bounds",
         .data$penalty_type
       ),
       # Make plays marked with down == 0 as NA:
@@ -200,6 +205,18 @@ add_nflscrapr_mutations <- function(pbp) {
 
       # Denote whether the home or away team has possession:
       posteam_type = dplyr::if_else(.data$posteam == .data$home_team, "home", "away"),
+
+      # manual posteam adjustments for rare plays with issues related to game
+      # delays.
+      posteam = dplyr::case_when(
+        # 2025_01_CAR_JAX, 1317: Game resumed after weather delay
+        # AND it was delayed right after a PAT.
+        # Prior two plays were delay info that shouldn't have posteam in order
+        # to get correct fixed drive results #529
+        # https://github.com/nflverse/nflfastR/issues/529
+        .data$game_id == "2025_01_CAR_JAX" & .data$play_id %in% c(1282, 1303) ~ NA_character_,
+        TRUE ~ .data$posteam
+      ),
 
       # Column denoting which team is on defense:
       defteam = dplyr::if_else(

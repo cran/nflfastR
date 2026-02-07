@@ -9,7 +9,7 @@
 #' @param ... Additional arguments passed to a message function (for internal use).
 #' @details Build columns that capture what happens on all plays, including
 #' penalties, using string extraction from play description.
-#' Loosely based on Ben's nflfastR guide (<https://www.nflfastr.com/articles/beginners_guide.html>)
+#' Loosely based on Ben's nflfastR guide (<https://nflfastr.com/articles/beginners_guide.html>)
 #' but updated to work with the RS data, which has a different player format in
 #' the play description; e.g. 24-M.Lynch instead of M.Lynch.
 #' The function also standardizes team abbreviations so that, for example,
@@ -89,9 +89,9 @@ clean_pbp <- function(pbp, ...) {
           stringr::str_detect(.data$desc, glue::glue('{abnormal_play}')) & !is.na(.data$passer_player_name) ~ .data$passer_player_name,
           TRUE ~ .data$passer
         ),
-        # fix the plays where scramble was fixed using charting data in 2005
+        # fix the plays where scramble was fixed using charting data from 1999 to 2005
         passer = dplyr::case_when(
-          is.na(.data$passer) & .data$qb_scramble == 1 & !is.na(.data$rusher) & .data$season == 2005 ~ .data$rusher,
+          is.na(.data$passer) & .data$qb_scramble == 1 & !is.na(.data$rusher) & .data$season <= 2005 ~ .data$rusher,
           TRUE ~ .data$passer
         ),
         # finally, for rusher, if there was already a passer (eg from scramble), set rusher to NA

@@ -351,7 +351,7 @@
 #' \item{drive_real_start_time}{Local day time when the drive started (currently not used by the NFL and therefore mostly 'NA').}
 #' \item{drive_play_count}{Numeric value of how many regular plays happened in a given drive.}
 #' \item{drive_time_of_possession}{Time of possession in a given drive.}
-#' \item{drive_first_downs}{Number of forst downs in a given drive.}
+#' \item{drive_first_downs}{Number of first downs in a given drive.}
 #' \item{drive_inside20}{Binary indicator if the offense was able to get inside the opponents 20 yard line.}
 #' \item{drive_ended_with_score}{Binary indicator the drive ended with a score.}
 #' \item{drive_quarter_start}{Numeric value indicating in which quarter the given drive has started.}
@@ -465,35 +465,63 @@ fast_scraper <- function(game_ids,
 # roster ------------------------------------------------------------------
 
 #' Load Team Rosters for Multiple Seasons
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' This function was deprecated. Please use [`nflreadr::load_rosters`].
+#'
 #' @details See [`nflreadr::load_rosters`] for details.
 #' @inheritDotParams nflreadr::load_rosters
 #' @inherit nflreadr::load_rosters
 #' @seealso For information on parallel processing and progress updates please
 #' see [nflfastR].
+#' @keywords internal
 #' @examples
 #' \donttest{
 #' # Roster of the 2019 and 2020 seasons
 #' try({# to avoid CRAN test problems
-#' fast_scraper_roster(2019:2020)
+#' # fast_scraper_roster(2019:2020)
 #' })
 #' }
 #' @export
-fast_scraper_roster <- function(...) nflreadr::load_rosters(...)
+fast_scraper_roster <- function(...) {
+  lifecycle::deprecate_warn(
+    "5.2.0",
+    "fast_scraper_roster()",
+    "nflreadr::load_rosters()"
+  )
+  nflreadr::load_rosters(...)
+}
 
 # schedules ---------------------------------------------------------------
 
 #' Load NFL Season Schedules
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' This function was deprecated. Please use [`nflreadr::load_schedules`].
+#'
 #' @details See [`nflreadr::load_schedules`] for details.
 #' @inheritDotParams nflreadr::load_schedules
 #' @inherit nflreadr::load_schedules
 #' @seealso For information on parallel processing and progress updates please
 #' see [nflfastR].
+#' @keywords internal
 #' @examples
 #'\donttest{
 #' # Get schedules for the whole 2015 - 2018 seasons
 #' try({# to avoid CRAN test problems
-#' fast_scraper_schedules(2015:2018)
+#' # fast_scraper_schedules(2015:2018)
 #' })
 #' }
 #' @export
-fast_scraper_schedules <- function(...) nflreadr::load_schedules(...)
+fast_scraper_schedules <- function(...){
+  lifecycle::deprecate_warn(
+    "5.2.0",
+    "fast_scraper_schedules()",
+    "nflreadr::load_schedules()"
+  )
+  nflreadr::load_schedules(...)
+}
